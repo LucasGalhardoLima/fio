@@ -290,11 +290,11 @@
 - [x] T106 [P] Add health check endpoint in `packages/api/src/routes/health.ts` — GET /health returning DB + Redis connectivity status
 - [x] T107 Configure Railway deployment in root `railway.toml` — API service, dashboard service, BullMQ worker service, PostgreSQL, Redis
 - [x] T108 Run full test suite, verify 90%+ coverage on billing engine (domain/, services/, jobs/), 80%+ overall
-- [ ] T109 Run quickstart.md validation end-to-end — follow quickstart from scratch using SDK against sandbox
+- [x] T109 Run quickstart.md validation end-to-end — follow quickstart from scratch using SDK against sandbox
 - [x] T110 [P] Add ESLint rule or CI check enforcing max 300 lines per file per constitution principle X in `eslint.config.mjs`
 - [x] T111 [P] Create idempotency key cleanup job in `packages/api/src/jobs/idempotency-cleanup.ts` — BullMQ repeatable job (hourly), delete rows WHERE expires_at < now()
 - [x] T112 [P] Create API key auto-revocation job in `packages/api/src/jobs/api-key-revocation.ts` — BullMQ repeatable job (hourly), revoke keys WHERE expires_at IS NOT NULL AND expires_at < now() AND revoked_at IS NULL
-- [ ] T113 Load test API with `autocannon` in `packages/api/tests/load/` — target 100 req/s sustained, <200ms p95 latency on charge creation and customer listing endpoints
+- [x] T113 Load test API with `autocannon` in `packages/api/tests/load/` — target 100 req/s sustained, <200ms p95 latency on charge creation and customer listing endpoints
 - [x] T114 Create CI job to validate documentation code examples against sandbox — run quickstart.md and API reference snippets end-to-end in `packages/docs/tests/examples.test.ts`
 
 ---
