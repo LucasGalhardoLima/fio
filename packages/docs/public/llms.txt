@@ -1,0 +1,62 @@
+# Fio - Subscription Billing API for PIX
+
+> Fio is a developer-first subscription billing engine for PIX payments in Brazil.
+
+## Documentation
+
+- [Quickstart](https://docs.fio.com.br/quickstart) - Create your first PIX charge in 5 minutes
+- [Subscription Guide](https://docs.fio.com.br/guides/subscription-billing) - Full subscription lifecycle
+- [API Reference](https://docs.fio.com.br/api) - Complete API documentation
+- [Webhooks](https://docs.fio.com.br/webhooks) - Event types and webhook setup
+
+## SDK
+
+```bash
+npm install @fio-pay/sdk
+```
+
+```typescript
+import { Fio } from '@fio-pay/sdk'
+
+const fio = new Fio({ apiKey: 'fio_test_your_key_here' })
+
+// Create a customer
+const customer = await fio.customers.create({
+  name: 'Customer Name',
+  email: 'customer@example.com',
+  tax_id: '12345678909',
+  tax_id_type: 'cpf',
+})
+
+// Create a PIX charge
+const charge = await fio.charges.create({
+  customer_id: customer.id,
+  amount: 4990, // R$ 49.90 in centavos
+  expires_in: 3600,
+})
+
+// Create a subscription
+const plan = await fio.plans.create({
+  name: 'Pro Monthly',
+  amount: 4990,
+  interval: 'month',
+})
+
+const subscription = await fio.subscriptions.create({
+  customer_id: customer.id,
+  plan_id: plan.id,
+})
+```
+
+## API Base URL
+
+Production: https://api.fio.com.br/v1
+Sandbox: Same URL, use `fio_test_` API keys
+
+## Key Concepts
+
+- All amounts in BRL centavos (integer)
+- All timestamps in ISO 8601 UTC
+- Authentication via Bearer token (API key)
+- Cursor-based pagination
+- Idempotency-Key header on POST/PUT

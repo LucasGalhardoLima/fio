@@ -1,0 +1,16 @@
+---
+title: Invoices
+description: API para invoices de ciclo de billing
+---
+
+# Invoices
+
+Invoices são geradas automaticamente pelo billing cycle. Não podem ser criadas manualmente.
+
+## GET /v1/invoices/:id
+
+Retorna invoice com `subscription` e `charge` expandidos.
+
+## GET /v1/invoices
+
+**Query params**: `starting_after`, `limit`, `subscription_id`, `status`.

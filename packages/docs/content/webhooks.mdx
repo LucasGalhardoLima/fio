@@ -1,0 +1,109 @@
+---
+title: Eventos e Webhooks
+description: Referência completa de eventos webhook do Fio
+---
+
+# Eventos e Webhooks
+
+O Fio emite webhooks para toda mudança de estado. Eventos são entregues via POST com assinatura HMAC-SHA256.
+
+## Configuração
+
+```typescript
+const endpoint = await fio.webhookEndpoints.create({
+  url: 'https://seuapp.com/webhooks/fio',
+  event_types: ['charge.paid', 'subscription.canceled'],
+  // Omita event_types para receber todos os eventos
+})
+
+// IMPORTANTE: Salve o secret — ele só é exibido uma vez
+console.log(endpoint.secret) // whsec_...
+```
+
+## Verificação de assinatura
+
+```typescript
+import { Fio } from '@fio-pay/sdk'
+
+// No handler do webhook:
+const event = Fio.webhooks.verify(
+  rawBody, // string do corpo da requisição
+  request.headers['fio-signature'], // header Fio-Signature
+  webhookSecret, // secret do endpoint
+)
+```
+
+O header `Fio-Signature` tem formato `t={timestamp},v1={signature}`.
+
+## Retentativas
+
+| Tentativa | Delay |
+|-----------|-------|
+| 1 | Imediata |
+| 2 | 1 minuto |
+| 3 | 5 minutos |
+| 4 | 30 minutos |
+| 5 | 2 horas |
+| 6 | 24 horas |
+
+Após 5 falhas, a entrega é marcada como `failed`.
+
+## Eventos de Cobrança
+
+| Evento | Gatilho |
+|--------|---------|
+| `charge.created` | Nova cobrança criada |
+| `charge.paid` | Pagamento confirmado via PIX |
+| `charge.failed` | Pagamento falhou |
+| `charge.expired` | Cobrança expirou sem pagamento |
+| `charge.refunded` | Reembolso total processado |
+| `charge.partially_refunded` | Reembolso parcial processado |
+
+## Eventos de Assinatura
+
+| Evento | Gatilho |
+|--------|---------|
+| `subscription.created` | Nova assinatura criada |
+| `subscription.activated` | Assinatura ativada |
+| `subscription.trial_ending` | Trial expira em 3 dias |
+| `subscription.past_due` | Pagamento falhou, em dunning |
+| `subscription.canceled` | Assinatura cancelada |
+| `subscription.paused` | Assinatura pausada |
+| `subscription.resumed` | Assinatura retomada |
+
+## Eventos de Invoice
+
+| Evento | Gatilho |
+|--------|---------|
+| `invoice.created` | Invoice do ciclo de billing gerada |
+| `invoice.paid` | Cobrança da invoice paga |
+| `invoice.failed` | Cobrança da invoice falhou |
+| `invoice.retry` | Retentativa de dunning gerada |
+
+## Eventos de Pix Automático
+
+| Evento | Gatilho |
+|--------|---------|
+| `pix_automatico.consent_approved` | Cliente autorizou débito |
+| `pix_automatico.consent_denied` | Cliente negou autorização |
+| `pix_automatico.consent_canceled` | Consentimento revogado |
+
+## Payload de exemplo
+
+```json
+{
+  "id": "evt_abc123",
+  "type": "charge.paid",
+  "created_at": "2026-03-04T10:05:30Z",
+  "data": {
+    "id": "chg_def456",
+    "customer_id": "cus_xyz789",
+    "amount": 4990,
+    "status": "paid",
+    "payment_method_type": "pix",
+    "paid_at": "2026-03-04T10:05:30Z"
+  }
+}
+```
+
+O campo `data` sempre contém o **snapshot completo** da entidade no momento do evento.

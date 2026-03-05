@@ -1,0 +1,53 @@
+---
+title: Customers
+description: API para gerenciar clientes
+---
+
+# Customers
+
+## POST /v1/customers
+
+Cria um novo cliente.
+
+```json title="Request"
+{
+  "name": "João Silva",
+  "email": "joao@example.com",
+  "tax_id": "12345678909",
+  "tax_id_type": "cpf",
+  "metadata": {}
+}
+```
+
+```json title="Response (201)"
+{
+  "id": "cus_abc123",
+  "name": "João Silva",
+  "email": "joao@example.com",
+  "tax_id": "123.456.789-09",
+  "tax_id_type": "cpf",
+  "metadata": {},
+  "created_at": "2026-03-04T10:00:00Z",
+  "updated_at": "2026-03-04T10:00:00Z"
+}
+```
+
+**Erros**: 422 (CPF/CNPJ inválido), 409 (email ou tax_id duplicado).
+
+## GET /v1/customers/:id
+
+Retorna um cliente pelo ID.
+
+## PUT /v1/customers/:id
+
+Atualiza name, email ou metadata. O tax_id é imutável após criação.
+
+## DELETE /v1/customers/:id
+
+Remove um cliente. Retorna 409 se tiver assinaturas ativas.
+
+## GET /v1/customers
+
+Lista clientes com paginação cursor-based.
+
+**Query params**: `starting_after`, `limit` (default 20, max 100), `email`.

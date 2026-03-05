@@ -1,0 +1,35 @@
+---
+title: Plans
+description: API para planos de assinatura
+---
+
+# Plans
+
+## POST /v1/plans
+
+Cria um plano de assinatura.
+
+```json title="Request"
+{
+  "name": "Pro Mensal",
+  "amount": 4990,
+  "interval": "month",
+  "trial_days": 14,
+  "dunning_schedule": [1, 3, 7],
+  "metadata": {}
+}
+```
+
+**Validação**: `amount >= 100` (R$1,00), `interval` em `[week, month, year]`.
+
+## GET /v1/plans/:id
+
+Retorna um plano pelo ID.
+
+## DELETE /v1/plans/:id
+
+Arquiva o plano (soft delete). Retorna o plano com `active: false`.
+
+## GET /v1/plans
+
+**Query params**: `starting_after`, `limit`, `active` (filtro boolean).
