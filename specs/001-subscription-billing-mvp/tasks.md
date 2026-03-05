@@ -272,9 +272,9 @@
 
 ### Implementation for User Story 9
 
-- [ ] T100 [US9] Create MCP server as separate repository (`fio-mcp-server`) with TypeScript setup, MIT license, @fio-pay/sdk as dependency
-- [ ] T101 [US9] Implement MCP tools in `src/tools/` of fio-mcp-server — create_charge, create_subscription, list_subscriptions, get_subscription, cancel_subscription — each calling Fio API via SDK
-- [ ] T102 [US9] Implement audit logging in `src/audit.ts` of fio-mcp-server — log each tool invocation with agent_id (from MCP client info), timestamp, tool name, input params, output result; pass agent_id as event metadata via SDK
+- [x] T100 [US9] Create MCP server as separate repository (`fio-mcp-server`) with TypeScript setup, MIT license, @fio-pay/sdk as dependency
+- [x] T101 [US9] Implement MCP tools in `src/tools/` of fio-mcp-server — create_charge, create_subscription, list_subscriptions, get_subscription, cancel_subscription — each calling Fio API via SDK
+- [x] T102 [US9] Implement audit logging in `src/audit.ts` of fio-mcp-server — log each tool invocation with agent_id (from MCP client info), timestamp, tool name, input params, output result; pass agent_id as event metadata via SDK
 - [x] T103 [US9] Ensure event service accepts metadata.agent_id on event creation (already supported by T022 metadata field) — add dashboard display logic to show agent badge on agent-initiated events in `packages/dashboard/src/components/event-timeline.tsx`
 
 **Checkpoint**: MCP server creates charges and manages subscriptions. All actions logged with agent identification. Dashboard shows agent actions distinctly.
