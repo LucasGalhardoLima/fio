@@ -289,7 +289,7 @@
 - [x] T105 [P] Add request/response logging middleware in `packages/api/src/middleware/logger.ts` — structured JSON logs, PII masking, request ID tracking
 - [x] T106 [P] Add health check endpoint in `packages/api/src/routes/health.ts` — GET /health returning DB + Redis connectivity status
 - [x] T107 Configure Railway deployment in root `railway.toml` — API service, dashboard service, BullMQ worker service, PostgreSQL, Redis
-- [ ] T108 Run full test suite, verify 90%+ coverage on billing engine (domain/, services/, jobs/), 80%+ overall
+- [x] T108 Run full test suite, verify 90%+ coverage on billing engine (domain/, services/, jobs/), 80%+ overall
 - [ ] T109 Run quickstart.md validation end-to-end — follow quickstart from scratch using SDK against sandbox
 - [x] T110 [P] Add ESLint rule or CI check enforcing max 300 lines per file per constitution principle X in `eslint.config.mjs`
 - [x] T111 [P] Create idempotency key cleanup job in `packages/api/src/jobs/idempotency-cleanup.ts` — BullMQ repeatable job (hourly), delete rows WHERE expires_at < now()

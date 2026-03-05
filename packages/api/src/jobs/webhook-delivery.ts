@@ -5,7 +5,7 @@ import { findWebhookDeliveryById, updateDeliveryAttempt } from '../db/queries/we
 import { findEventById } from '../db/queries/events.js'
 import { signPayload } from '../lib/hmac.js'
 import { WEBHOOK_RETRY_SCHEDULE, MAX_WEBHOOK_ATTEMPTS } from '@fio-pay/shared'
-import { webhookDeliveryQueue } from './queue-setup.js'
+import { getWebhookDeliveryQueue } from './queue-setup.js'
 
 interface WebhookDeliveryJobData {
   delivery_id: string
@@ -176,7 +176,7 @@ export function startWebhookDeliveryWorker(): Worker<WebhookDeliveryJobData> {
       })
 
       // Enqueue the retry
-      await webhookDeliveryQueue.add(
+      await getWebhookDeliveryQueue().add(
         'webhook-delivery',
         {
           ...data,

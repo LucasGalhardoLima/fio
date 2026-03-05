@@ -6,6 +6,7 @@ export default defineConfig({
     environment: 'node',
     include: ['packages/*/tests/**/*.test.ts'],
     pool: 'forks',
+    fileParallelism: false,
     testTimeout: 30_000,
     coverage: {
       provider: 'v8',

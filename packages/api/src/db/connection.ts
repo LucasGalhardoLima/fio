@@ -24,6 +24,10 @@ export function getDatabase(): Kysely<Database> {
   return db
 }
 
+export function setDatabase(instance: Kysely<Database>): void {
+  db = instance
+}
+
 export async function closeDatabase(): Promise<void> {
   if (db) {
     await db.destroy()

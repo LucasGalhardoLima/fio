@@ -5,13 +5,30 @@ import type {
   NewPlan,
 } from '../types.js'
 
+/**
+ * Serialize JSONB array/object fields for pg driver.
+ * The pg driver converts JS arrays to PostgreSQL array format {1,2,3}
+ * but JSONB columns need JSON format [1,2,3].
+ */
+function serializeJsonbFields(plan: NewPlan): Record<string, unknown> {
+  return {
+    ...plan,
+    dunning_schedule: plan.dunning_schedule
+      ? (JSON.stringify(plan.dunning_schedule) as unknown)
+      : plan.dunning_schedule,
+    metadata: plan.metadata
+      ? (JSON.stringify(plan.metadata) as unknown)
+      : plan.metadata,
+  }
+}
+
 export async function insertPlan(
   db: Kysely<Database>,
   plan: NewPlan,
 ): Promise<PlanRow> {
   return db
     .insertInto('plans')
-    .values(plan)
+    .values(serializeJsonbFields(plan) as NewPlan)
     .returningAll()
     .executeTakeFirstOrThrow()
 }

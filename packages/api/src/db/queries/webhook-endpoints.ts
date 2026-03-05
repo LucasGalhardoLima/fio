@@ -10,9 +10,17 @@ export async function insertWebhookEndpoint(
   db: Kysely<Database>,
   endpoint: NewWebhookEndpoint,
 ): Promise<WebhookEndpointRow> {
+  // Stringify event_types array for JSONB (pg driver converts arrays to PG array format)
+  const values = {
+    ...endpoint,
+    event_types: endpoint.event_types
+      ? (JSON.stringify(endpoint.event_types) as unknown as string[])
+      : endpoint.event_types,
+  }
+
   return db
     .insertInto('webhook_endpoints')
-    .values(endpoint)
+    .values(values)
     .returningAll()
     .executeTakeFirstOrThrow()
 }
@@ -70,7 +78,7 @@ export async function findMatchingEndpoints(
     .where((eb) =>
       eb.or([
         eb('event_types', 'is', null),
-        sql<boolean>`event_types @> ARRAY[${eventType}]::text[]`,
+        sql<boolean>`event_types @> ${JSON.stringify([eventType])}::jsonb`,
       ]),
     )
     .orderBy('id', 'asc')

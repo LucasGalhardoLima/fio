@@ -77,6 +77,7 @@ export async function customerRoutes(fastify: FastifyInstance): Promise<void> {
         name?: string
         email?: string
         metadata?: Record<string, unknown>
+        tax_id?: string
       }
 
       const customer = await updateCustomerService(

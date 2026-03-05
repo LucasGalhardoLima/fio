@@ -37,7 +37,7 @@ export const updateCustomerSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   email: z.string().email().max(255).optional(),
   metadata: metadata.optional(),
-})
+}).passthrough()
 
 // Plan schemas
 export const createPlanSchema = z.object({

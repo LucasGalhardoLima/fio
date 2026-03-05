@@ -20,7 +20,7 @@ describe('Charges — /v1/charges', () => {
 
   beforeAll(async () => {
     db = createTestDatabase()
-    app = await createTestApp()
+    app = await createTestApp(db)
 
     await cleanupDatabase(db)
 

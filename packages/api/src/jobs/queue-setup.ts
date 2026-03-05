@@ -37,22 +37,27 @@ function createQueue(name: QueueName): Queue {
   })
 }
 
-export const billingCycleQueue = createQueue(QUEUE_NAMES.BILLING_CYCLE)
-export const dunningRetryQueue = createQueue(QUEUE_NAMES.DUNNING_RETRY)
-export const webhookDeliveryQueue = createQueue(QUEUE_NAMES.WEBHOOK_DELIVERY)
-export const pixAutomaticoConsentQueue = createQueue(QUEUE_NAMES.PIX_AUTOMATICO_CONSENT)
-export const chargeExpirationQueue = createQueue(QUEUE_NAMES.CHARGE_EXPIRATION)
-export const idempotencyCleanupQueue = createQueue(QUEUE_NAMES.IDEMPOTENCY_CLEANUP)
-export const apiKeyRevocationQueue = createQueue(QUEUE_NAMES.API_KEY_REVOCATION)
+const queues = new Map<QueueName, Queue>()
+
+function getQueue(name: QueueName): Queue {
+  let queue = queues.get(name)
+  if (!queue) {
+    queue = createQueue(name)
+    queues.set(name, queue)
+  }
+  return queue
+}
+
+export function getBillingCycleQueue(): Queue { return getQueue(QUEUE_NAMES.BILLING_CYCLE) }
+export function getDunningRetryQueue(): Queue { return getQueue(QUEUE_NAMES.DUNNING_RETRY) }
+export function getWebhookDeliveryQueue(): Queue { return getQueue(QUEUE_NAMES.WEBHOOK_DELIVERY) }
+export function getPixAutomaticoConsentQueue(): Queue { return getQueue(QUEUE_NAMES.PIX_AUTOMATICO_CONSENT) }
+export function getChargeExpirationQueue(): Queue { return getQueue(QUEUE_NAMES.CHARGE_EXPIRATION) }
+export function getIdempotencyCleanupQueue(): Queue { return getQueue(QUEUE_NAMES.IDEMPOTENCY_CLEANUP) }
+export function getApiKeyRevocationQueue(): Queue { return getQueue(QUEUE_NAMES.API_KEY_REVOCATION) }
 
 export async function closeQueues(): Promise<void> {
-  await Promise.all([
-    billingCycleQueue.close(),
-    dunningRetryQueue.close(),
-    webhookDeliveryQueue.close(),
-    pixAutomaticoConsentQueue.close(),
-    chargeExpirationQueue.close(),
-    idempotencyCleanupQueue.close(),
-    apiKeyRevocationQueue.close(),
-  ])
+  const closePromises = Array.from(queues.values()).map((q) => q.close())
+  await Promise.all(closePromises)
+  queues.clear()
 }

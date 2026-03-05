@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { sql } from 'kysely'
 import type { FastifyInstance } from 'fastify'
 import type { Kysely } from 'kysely'
 import type { Database, PlanRow } from '../../../src/db/types.js'
@@ -22,7 +23,7 @@ describe('Subscriptions — /v1/subscriptions', () => {
 
   beforeAll(async () => {
     db = createTestDatabase()
-    app = await createTestApp()
+    app = await createTestApp(db)
     await cleanupDatabase(db)
 
     const account = await createTestAccount(db)
@@ -33,12 +34,14 @@ describe('Subscriptions — /v1/subscriptions', () => {
     const customer = await createTestCustomer(db, accountId, 'test')
     customerId = customer.id
 
+    const suffix = Date.now()
     planNoTrial = await db
       .insertInto('plans')
       .values({
-        account_id: accountId, environment: 'test', name: 'Monthly Plan',
+        account_id: accountId, environment: 'test', name: `Monthly Plan ${suffix}`,
         amount: 2990, interval: 'month', trial_days: 0,
-        dunning_schedule: [1, 3, 7], metadata: {},
+        dunning_schedule: JSON.stringify([1, 3, 7]) as unknown as number[],
+        metadata: JSON.stringify({}) as unknown as Record<string, unknown>,
       })
       .returningAll()
       .executeTakeFirstOrThrow()
@@ -46,9 +49,10 @@ describe('Subscriptions — /v1/subscriptions', () => {
     planWithTrial = await db
       .insertInto('plans')
       .values({
-        account_id: accountId, environment: 'test', name: 'Monthly Plan with Trial',
+        account_id: accountId, environment: 'test', name: `Monthly Plan with Trial ${suffix}`,
         amount: 4990, interval: 'month', trial_days: 14,
-        dunning_schedule: [1, 3, 7], metadata: {},
+        dunning_schedule: JSON.stringify([1, 3, 7]) as unknown as number[],
+        metadata: JSON.stringify({}) as unknown as Record<string, unknown>,
       })
       .returningAll()
       .executeTakeFirstOrThrow()

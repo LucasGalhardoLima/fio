@@ -10,7 +10,7 @@ import {
   findMatchingEndpoints,
 } from '../db/queries/webhook-endpoints.js'
 import { insertWebhookDelivery } from '../db/queries/webhook-deliveries.js'
-import { webhookDeliveryQueue } from '../jobs/queue-setup.js'
+import { getWebhookDeliveryQueue } from '../jobs/queue-setup.js'
 import { NotFoundError } from '../lib/errors.js'
 import { paginateResults, normalizePaginationLimit } from '../lib/pagination.js'
 import { MAX_WEBHOOK_ATTEMPTS } from '@fio-pay/shared'
@@ -125,7 +125,7 @@ export async function dispatchEvent(
       response_time_ms: null,
     })
 
-    await webhookDeliveryQueue.add(
+    await getWebhookDeliveryQueue().add(
       'webhook-delivery',
       {
         delivery_id: delivery.id,

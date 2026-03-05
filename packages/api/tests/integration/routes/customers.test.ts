@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest'
 import type { FastifyInstance } from 'fastify'
 import type { Kysely } from 'kysely'
 import type { Database } from '../../../src/db/types.js'
+import { sql } from 'kysely'
 import {
   createTestApp,
   createTestDatabase,
@@ -20,13 +21,18 @@ describe('Customer CRUD — /v1/customers', () => {
 
   beforeAll(async () => {
     db = createTestDatabase()
-    app = await createTestApp()
+    app = await createTestApp(db)
 
     await cleanupDatabase(db)
 
     const account = await createTestAccount(db)
     const { rawKey } = await createTestApiKey(db, account.id)
     apiKey = rawKey
+  })
+
+  beforeEach(async () => {
+    // Clean customer-dependent tables before each test to avoid tax_id/email conflicts
+    await sql`TRUNCATE TABLE charges, invoices, subscriptions, customers CASCADE`.execute(db)
   })
 
   afterAll(async () => {

@@ -117,9 +117,19 @@ function formatErrorResponse(error: FioError): {
 
 async function errorHandlerPlugin(fastify: FastifyInstance): Promise<void> {
   fastify.setErrorHandler(
-    async (error: Error, _request: FastifyRequest, reply: FastifyReply) => {
+    async (error: Error & { statusCode?: number; validation?: unknown[] }, _request: FastifyRequest, reply: FastifyReply) => {
       if (error instanceof FioError) {
         return reply.status(error.statusCode).send(formatErrorResponse(error))
+      }
+
+      // Handle Fastify/Zod schema validation errors (status 400)
+      if (error.statusCode === 400 && error.validation) {
+        return reply.status(422).send({
+          type: 'validation_error',
+          message: error.message,
+          code: 'validation_error',
+          details: [],
+        })
       }
 
       fastify.log.error(error, 'Unhandled error')

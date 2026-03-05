@@ -1,7 +1,8 @@
 import { Kysely, PostgresDialect, sql } from 'kysely'
 import pg from 'pg'
 import type { FastifyInstance } from 'fastify'
-import { randomBytes, createHash } from 'node:crypto'
+import { randomBytes } from 'node:crypto'
+import argon2 from 'argon2'
 import type {
   Database,
   AccountRow,
@@ -12,6 +13,14 @@ import type {
   NewCustomer,
 } from '../../src/db/types.js'
 import { buildApp } from '../../src/app.js'
+import { setDatabase } from '../../src/db/connection.js'
+import { customerRoutes } from '../../src/routes/v1/customers.js'
+import { chargeRoutes } from '../../src/routes/v1/charges.js'
+import { planRoutes } from '../../src/routes/v1/plans.js'
+import { subscriptionRoutes } from '../../src/routes/v1/subscriptions.js'
+import { invoiceRoutes } from '../../src/routes/v1/invoices.js'
+import { fioErrorHandler } from '../../src/lib/errors.js'
+import { MockPaymentProvider } from '../../src/providers/mock-provider.js'
 
 const { Pool } = pg
 
@@ -44,8 +53,22 @@ export function createTestDatabase(): Kysely<Database> {
 // App helper
 // ---------------------------------------------------------------------------
 
-export async function createTestApp(): Promise<FastifyInstance> {
+export async function createTestApp(db?: Kysely<Database>): Promise<FastifyInstance> {
+  if (db) {
+    setDatabase(db)
+  }
+
   const app = buildApp()
+  const provider = new MockPaymentProvider()
+  const pixKey = 'test-pix-key'
+
+  await app.register(fioErrorHandler)
+  await app.register(customerRoutes)
+  await app.register(chargeRoutes, { provider, pixKey })
+  await app.register(planRoutes)
+  await app.register(subscriptionRoutes, { provider })
+  await app.register(invoiceRoutes)
+
   await app.ready()
   return app
 }
@@ -97,9 +120,11 @@ const TRUNCATE_ORDER = [
 ] as const
 
 export async function cleanupDatabase(db: Kysely<Database>): Promise<void> {
-  for (const table of TRUNCATE_ORDER) {
-    await sql`TRUNCATE TABLE ${sql.table(table)} CASCADE`.execute(db)
-  }
+  await sql`TRUNCATE TABLE
+    idempotency_keys, webhook_deliveries, webhook_endpoints,
+    events, charges, invoices, subscriptions, plans,
+    customers, api_keys, accounts
+    CASCADE`.execute(db)
 }
 
 // ---------------------------------------------------------------------------
@@ -135,8 +160,8 @@ export async function createTestApiKey(
   const environment = overrides?.environment ?? 'test'
   const prefix = environment === 'live' ? 'fio_live_' : 'fio_test_'
   const rawKey = prefix + randomBytes(24).toString('hex')
-  const keyHash = createHash('sha256').update(rawKey).digest('hex')
-  const keyPrefix = rawKey.slice(0, prefix.length + 8)
+  const keyHash = await argon2.hash(rawKey)
+  const keyPrefix = rawKey.slice(0, 12)
 
   const defaults: NewApiKey = {
     account_id: accountId,
