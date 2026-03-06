@@ -3,6 +3,7 @@ import starlight from '@astrojs/starlight'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
+  site: 'https://fiopay-docs.vercel.app',
   integrations: [
     starlight({
       title: 'Fio',
@@ -38,10 +39,25 @@ export default defineConfig({
       customCss: ['./src/styles/global.css'],
       head: [
         {
+          tag: 'link',
+          attrs: {
+            rel: 'icon',
+            type: 'image/svg+xml',
+            href: '/favicon.svg',
+          },
+        },
+        {
           tag: 'meta',
           attrs: {
             property: 'og:type',
             content: 'website',
+          },
+        },
+        {
+          tag: 'meta',
+          attrs: {
+            property: 'og:image',
+            content: 'https://fiopay-docs.vercel.app/og-image.png',
           },
         },
       ],
