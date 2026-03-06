@@ -60,6 +60,7 @@ html::-webkit-scrollbar { display: none; }
 /* ── Sidebar border ──────────────────────────── */
 :root[data-theme='dark'] .sidebar-pane {
   border-right-color: rgba(34, 197, 94, 0.1);
+  position: relative;
 }
 
 /* ── Thread line at sidebar edge ─────────────── */
