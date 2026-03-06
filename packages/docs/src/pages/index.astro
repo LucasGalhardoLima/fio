@@ -1,5 +1,45 @@
 ---
 // Custom landing page — not managed by Starlight
+import '../styles/landing.css'
+
+// Code snippets as raw HTML strings to avoid Astro parsing curly braces as expressions
+const heroCode = `<span class="kw">import</span> { Fio } <span class="kw">from</span> <span class="str">'@fio-pay/sdk'</span>
+
+<span class="kw">const</span> fio = <span class="kw">new</span> <span class="fn">Fio</span>({ apiKey: <span class="str">'fio_test_...'</span> })
+
+<span class="kw">const</span> sub = <span class="kw">await</span> fio.subscriptions.<span class="fn">create</span>({
+  customer_id: <span class="str">'cus_abc123'</span>,
+  plan_id: <span class="str">'plan_xyz789'</span>,
+})
+
+console.<span class="fn">log</span>(sub.status) <span class="cm">// "trialing"</span>`
+
+const fullCode = `<span class="kw">import</span> { Fio } <span class="kw">from</span> <span class="str">'@fio-pay/sdk'</span>
+
+<span class="kw">const</span> fio = <span class="kw">new</span> <span class="fn">Fio</span>({ apiKey: <span class="str">'fio_test_sua_chave'</span> })
+
+<span class="cm">// 1. Crie um cliente</span>
+<span class="kw">const</span> customer = <span class="kw">await</span> fio.customers.<span class="fn">create</span>({
+  name: <span class="str">'Jo\u00e3o Silva'</span>,
+  email: <span class="str">'joao@example.com'</span>,
+  tax_id: <span class="str">'52998224725'</span>,
+  tax_id_type: <span class="str">'cpf'</span>,
+})
+
+<span class="cm">// 2. Gere uma cobran\u00e7a PIX</span>
+<span class="kw">const</span> charge = <span class="kw">await</span> fio.charges.<span class="fn">create</span>({
+  customer_id: customer.id,
+  amount: <span class="num">4990</span>, <span class="cm">// R$ 49,90</span>
+  expires_in: <span class="num">3600</span>,
+})
+
+console.<span class="fn">log</span>(charge.pix_qr_code) <span class="cm">// Copia-e-cola do PIX</span>
+
+<span class="cm">// 3. (Sandbox) Simule o pagamento</span>
+<span class="kw">await</span> fio.test.<span class="fn">simulatePayment</span>(charge.id)
+
+<span class="kw">const</span> paid = <span class="kw">await</span> fio.charges.<span class="fn">get</span>(charge.id)
+console.<span class="fn">log</span>(paid.status) <span class="cm">// "paid" \u2705</span>`
 ---
 <html lang="pt-BR" class="dark">
 <head>
@@ -7,33 +47,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fio — Cobrança recorrente via PIX pra devs</title>
   <meta name="description" content="Integre assinaturas PIX no seu SaaS em minutos. SDK TypeScript, webhooks, sandbox completo." />
-  <style>
-    @import 'tailwindcss';
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    .gradient-text {
-      background: linear-gradient(135deg, #22c55e 0%, #4ade80 50%, #86efac 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .code-block {
-      background: #0a0a0a;
-      border: 1px solid #1f2937;
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-      font-family: 'JetBrains Mono', ui-monospace, monospace;
-      font-size: 0.875rem;
-      line-height: 1.7;
-      overflow-x: auto;
-    }
-    .code-block .kw { color: #c084fc; }
-    .code-block .fn { color: #60a5fa; }
-    .code-block .str { color: #4ade80; }
-    .code-block .cm { color: #6b7280; }
-    .code-block .num { color: #fb923c; }
-  </style>
 </head>
 <body class="bg-[#030712] text-gray-100 antialiased">
 
@@ -64,16 +77,7 @@
         </div>
       </div>
       <div class="code-block">
-        <pre><span class="kw">import</span> { Fio } <span class="kw">from</span> <span class="str">'@fio-pay/sdk'</span>
-
-<span class="kw">const</span> fio = <span class="kw">new</span> <span class="fn">Fio</span>({ apiKey: <span class="str">'fio_test_...'</span> })
-
-<span class="kw">const</span> sub = <span class="kw">await</span> fio.subscriptions.<span class="fn">create</span>({
-  customer_id: <span class="str">'cus_abc123'</span>,
-  plan_id: <span class="str">'plan_xyz789'</span>,
-})
-
-console.<span class="fn">log</span>(sub.status) <span class="cm">// "trialing"</span></pre>
+        <pre set:html={heroCode} />
       </div>
     </div>
   </section>
@@ -105,32 +109,7 @@ console.<span class="fn">log</span>(sub.status) <span class="cm">// "trialing"</
     <h2 class="text-3xl font-bold text-center mb-4">Sua primeira cobrança em 6 linhas</h2>
     <p class="text-gray-400 text-center mb-12 max-w-2xl mx-auto">Do SDK instalado ao pagamento confirmado — tudo no sandbox, sem cadastro de gateway.</p>
     <div class="max-w-3xl mx-auto code-block">
-      <pre><span class="kw">import</span> { Fio } <span class="kw">from</span> <span class="str">'@fio-pay/sdk'</span>
-
-<span class="kw">const</span> fio = <span class="kw">new</span> <span class="fn">Fio</span>({ apiKey: <span class="str">'fio_test_sua_chave'</span> })
-
-<span class="cm">// 1. Crie um cliente</span>
-<span class="kw">const</span> customer = <span class="kw">await</span> fio.customers.<span class="fn">create</span>({
-  name: <span class="str">'João Silva'</span>,
-  email: <span class="str">'joao@example.com'</span>,
-  tax_id: <span class="str">'52998224725'</span>,
-  tax_id_type: <span class="str">'cpf'</span>,
-})
-
-<span class="cm">// 2. Gere uma cobrança PIX</span>
-<span class="kw">const</span> charge = <span class="kw">await</span> fio.charges.<span class="fn">create</span>({
-  customer_id: customer.id,
-  amount: <span class="num">4990</span>, <span class="cm">// R$ 49,90</span>
-  expires_in: <span class="num">3600</span>,
-})
-
-console.<span class="fn">log</span>(charge.pix_qr_code) <span class="cm">// Copia-e-cola do PIX</span>
-
-<span class="cm">// 3. (Sandbox) Simule o pagamento</span>
-<span class="kw">await</span> fio.test.<span class="fn">simulatePayment</span>(charge.id)
-
-<span class="kw">const</span> paid = <span class="kw">await</span> fio.charges.<span class="fn">get</span>(charge.id)
-console.<span class="fn">log</span>(paid.status) <span class="cm">// "paid" ✅</span></pre>
+      <pre set:html={fullCode} />
     </div>
   </section>
 
