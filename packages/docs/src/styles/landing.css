@@ -1,16 +1,29 @@
 /* ──────────────────────────────────────────────
    Fio Landing Page — landing.css
    All custom styles for /index.astro
-   NOTE: No CSS in <style> tags (esbuild issue)
    ────────────────────────────────────────────── */
 
 @import "tailwindcss";
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,500,400&display=swap');
 
 /* Reset & base */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 
-/* ── Gradient text ────────────────────────────── */
+body {
+  font-family: 'Satoshi', system-ui, -apple-system, sans-serif;
+  background-color: #030712;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+}
+
+/* ── Hide scrollbar ──────────────────────────── */
+html { scrollbar-width: none; }
+html::-webkit-scrollbar { display: none; }
+
+/* ── Gradient text ───────────────────────────── */
 .gradient-text {
   background: linear-gradient(135deg, #22c55e 0%, #4ade80 50%, #86efac 100%);
   background-size: 200% 200%;
@@ -25,16 +38,9 @@ html { scroll-behavior: smooth; }
   50% { background-position: 100% 50%; }
 }
 
-/* ── Hero headline shimmer ────────────────────── */
+/* ── Hero headline shimmer ───────────────────── */
 .hero-headline {
-  background: linear-gradient(
-    90deg,
-    #ffffff 0%,
-    #ffffff 40%,
-    #22c55e 50%,
-    #ffffff 60%,
-    #ffffff 100%
-  );
+  background: linear-gradient(90deg, #fff 0%, #fff 40%, #22c55e 50%, #fff 60%, #fff 100%);
   background-size: 200% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -47,27 +53,48 @@ html { scroll-behavior: smooth; }
   50% { background-position: -100% 0; }
 }
 
-/* ── Sticky nav ───────────────────────────────── */
-.nav-sticky {
-  position: sticky;
+/* ── Grid pattern background ─────────────────── */
+.grid-pattern {
+  background-image:
+    linear-gradient(rgba(34, 197, 94, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 197, 94, 0.02) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+/* ── Flowing thread container ────────────────── */
+.thread-container {
+  position: absolute;
   top: 0;
-  z-index: 50;
-  background: rgba(3, 7, 18, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.3s ease;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
 }
 
-.nav-sticky.scrolled {
-  border-bottom-color: rgba(34, 197, 94, 0.15);
+/* ── Code glow border ────────────────────────── */
+.code-glow {
+  position: relative;
 }
 
-/* ── Mobile nav ───────────────────────────────── */
+.code-glow::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 0.75rem;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, transparent 50%, rgba(34, 197, 94, 0.2) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Mobile nav ──────────────────────────────── */
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
 .hamburger {
@@ -91,9 +118,7 @@ html { scroll-behavior: smooth; }
 }
 
 @media (max-width: 767px) {
-  .hamburger {
-    display: flex;
-  }
+  .hamburger { display: flex; }
 
   .nav-links {
     position: fixed;
@@ -110,9 +135,7 @@ html { scroll-behavior: smooth; }
     z-index: 55;
   }
 
-  .nav-links a {
-    font-size: 1.25rem;
-  }
+  .nav-links a { font-size: 1.25rem; }
 
   [data-menu-open="true"] .nav-links {
     opacity: 1;
@@ -122,123 +145,13 @@ html { scroll-behavior: smooth; }
   [data-menu-open="true"] .hamburger span:nth-child(1) {
     transform: rotate(45deg) translate(5px, 5px);
   }
-  [data-menu-open="true"] .hamburger span:nth-child(2) {
-    opacity: 0;
-  }
+  [data-menu-open="true"] .hamburger span:nth-child(2) { opacity: 0; }
   [data-menu-open="true"] .hamburger span:nth-child(3) {
     transform: rotate(-45deg) translate(5px, -5px);
   }
 }
 
-/* ── Code blocks (Astro <Code> override) ──────── */
-.code-glow {
-  position: relative;
-  border-radius: 0.75rem;
-  overflow: hidden;
-}
-
-.code-glow::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 0.75rem;
-  padding: 1px;
-  background: linear-gradient(
-    135deg,
-    rgba(34, 197, 94, 0.3) 0%,
-    rgba(34, 197, 94, 0.05) 50%,
-    rgba(34, 197, 94, 0.2) 100%
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-.code-glow::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(34, 197, 94, 0.06) 0%,
-    transparent 70%
-  );
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Astro Code component styles */
-.code-glow pre {
-  background: #0a0f1a !important;
-  border: none !important;
-  border-radius: 0.75rem;
-  padding: 1.5rem !important;
-  margin: 0 !important;
-  font-size: 0.85rem !important;
-  line-height: 1.7 !important;
-  overflow-x: auto;
-  position: relative;
-  z-index: 1;
-}
-
-.code-glow code {
-  font-family: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace !important;
-}
-
-/* ── Feature cards ────────────────────────────── */
-.feature-card {
-  background: rgba(17, 24, 39, 0.5);
-  border: 1px solid rgba(75, 85, 99, 0.3);
-  border-radius: 1rem;
-  padding: 2rem;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-}
-
-.feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(34, 197, 94, 0.08), 0 4px 16px rgba(0, 0, 0, 0.3);
-  border-color: rgba(34, 197, 94, 0.25);
-}
-
-.feature-icon {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-  margin-bottom: 1.25rem;
-  font-size: 1.25rem;
-}
-
-/* ── Pricing card ─────────────────────────────── */
-.pricing-card {
-  background: rgba(17, 24, 39, 0.5);
-  border: 1px solid rgba(75, 85, 99, 0.3);
-  border-radius: 1rem;
-  padding: 2.5rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.pricing-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #22c55e, transparent);
-}
-
-/* ── Scroll reveal animations ─────────────────── */
+/* ── Scroll reveal ───────────────────────────── */
 .reveal {
   opacity: 0;
   transform: translateY(24px);
@@ -249,130 +162,6 @@ html { scroll-behavior: smooth; }
 }
 
 @keyframes reveal-up {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Staggered children */
-.reveal-stagger .reveal:nth-child(1) { animation-delay: 0ms; }
-.reveal-stagger .reveal:nth-child(2) { animation-delay: 120ms; }
-.reveal-stagger .reveal:nth-child(3) { animation-delay: 240ms; }
-
-/* ── Section divider ──────────────────────────── */
-.section-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.2), transparent);
-  max-width: 80rem;
-  margin: 0 auto;
-}
-
-/* ── Badge / pill ─────────────────────────────── */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.875rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(34, 197, 94, 0.25);
-  background: rgba(34, 197, 94, 0.08);
-  color: #4ade80;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-}
-
-/* ── CTA button styles ────────────────────────── */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #22c55e;
-  color: #030712;
-  font-weight: 600;
-  padding: 0.75rem 1.75rem;
-  border-radius: 0.5rem;
-  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
-  text-decoration: none;
-}
-
-.btn-primary:hover {
-  background: #4ade80;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3);
-}
-
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(75, 85, 99, 0.5);
-  color: #d1d5db;
-  font-weight: 500;
-  padding: 0.75rem 1.75rem;
-  border-radius: 0.5rem;
-  transition: border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
-  text-decoration: none;
-}
-
-.btn-secondary:hover {
-  border-color: rgba(156, 163, 175, 0.6);
-  color: #ffffff;
-  transform: translateY(-1px);
-}
-
-/* ── Check list ───────────────────────────────── */
-.check-list li {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 0.375rem 0;
-}
-
-.check-list li::before {
-  content: '';
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: rgba(34, 197, 94, 0.15);
-  border: 1px solid rgba(34, 197, 94, 0.4);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3.5 6l2 2 3-4' stroke='%2322c55e' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-/* ── Footer ───────────────────────────────────── */
-.footer-gradient {
-  background: linear-gradient(180deg, transparent 0%, rgba(34, 197, 94, 0.03) 100%);
-}
-
-/* ── Subtle grid background ───────────────────── */
-.grid-bg {
-  background-image:
-    linear-gradient(rgba(34, 197, 94, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(34, 197, 94, 0.03) 1px, transparent 1px);
-  background-size: 64px 64px;
-}
-
-/* ── Hero glow (radial behind hero) ───────────── */
-.hero-glow {
-  position: absolute;
-  top: -20%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80%;
-  height: 600px;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(34, 197, 94, 0.08) 0%,
-    transparent 70%
-  );
-  pointer-events: none;
-  z-index: 0;
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
 }
