@@ -10,7 +10,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import ts from 'typescript'
 
-const CONTENT_DIR = join(import.meta.dirname, '..', 'content')
+const CONTENT_DIR = join(import.meta.dirname, '..', 'src', 'content', 'docs', 'docs')
 
 /**
  * Extract TypeScript code blocks from an MDX file.
