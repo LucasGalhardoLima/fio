@@ -118,3 +118,6 @@ jobs:
 
       - name: Validate documentation code examples
         run: pnpm vitest run --reporter=verbose packages/docs/tests
+
+      - name: Build docs site
+        run: pnpm --filter @fio-pay/docs build

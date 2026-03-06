@@ -4,10 +4,10 @@
 
 ## Documentation
 
-- [Quickstart](https://docs.fio.com.br/quickstart) - Create your first PIX charge in 5 minutes
-- [Subscription Guide](https://docs.fio.com.br/guides/subscription-billing) - Full subscription lifecycle
-- [API Reference](https://docs.fio.com.br/api) - Complete API documentation
-- [Webhooks](https://docs.fio.com.br/webhooks) - Event types and webhook setup
+- [Quickstart](/docs/quickstart) - Create your first PIX charge in 5 minutes
+- [Subscription Guide](/docs/guides/subscription-billing) - Full subscription lifecycle
+- [API Reference](/docs/api) - Complete API documentation
+- [Webhooks](/docs/webhooks) - Event types and webhook setup
 
 ## SDK
 
