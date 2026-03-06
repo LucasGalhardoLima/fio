@@ -1,8 +1,8 @@
 @layer base, starlight, theme, components, utilities;
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,500,400&display=swap');
 @import '@astrojs/starlight-tailwind';
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
-@import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,500,400&display=swap');
 
 /* ── Fio brand colors ────────────────────────── */
 :root {
