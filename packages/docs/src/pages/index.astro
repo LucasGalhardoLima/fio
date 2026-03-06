@@ -1,0 +1,169 @@
+---
+// Custom landing page — not managed by Starlight
+---
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fio — Cobrança recorrente via PIX pra devs</title>
+  <meta name="description" content="Integre assinaturas PIX no seu SaaS em minutos. SDK TypeScript, webhooks, sandbox completo." />
+  <style>
+    @import 'tailwindcss';
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #22c55e 0%, #4ade80 50%, #86efac 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .code-block {
+      background: #0a0a0a;
+      border: 1px solid #1f2937;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.875rem;
+      line-height: 1.7;
+      overflow-x: auto;
+    }
+    .code-block .kw { color: #c084fc; }
+    .code-block .fn { color: #60a5fa; }
+    .code-block .str { color: #4ade80; }
+    .code-block .cm { color: #6b7280; }
+    .code-block .num { color: #fb923c; }
+  </style>
+</head>
+<body class="bg-[#030712] text-gray-100 antialiased">
+
+  <!-- Nav -->
+  <nav class="max-w-6xl mx-auto flex items-center justify-between px-6 py-5">
+    <a href="/" class="text-xl font-bold text-white">Fio</a>
+    <div class="flex items-center gap-6 text-sm">
+      <a href="/docs/" class="text-gray-400 hover:text-white transition-colors">Docs</a>
+      <a href="#pricing" class="text-gray-400 hover:text-white transition-colors">Preços</a>
+      <a href="https://github.com/LucasGalhardoLima/fio" target="_blank" rel="noopener" class="text-gray-400 hover:text-white transition-colors">GitHub</a>
+      <a href="/docs/quickstart/" class="bg-green-500 hover:bg-green-400 text-black font-medium px-4 py-2 rounded-lg transition-colors">Comece agora</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="max-w-6xl mx-auto px-6 pt-20 pb-24">
+    <div class="grid md:grid-cols-2 gap-12 items-center">
+      <div>
+        <h1 class="text-4xl sm:text-5xl font-bold leading-tight">
+          Cobrança recorrente via PIX <span class="gradient-text">pra devs</span>
+        </h1>
+        <p class="mt-6 text-lg text-gray-400 leading-relaxed">
+          Integre assinaturas PIX no seu SaaS em minutos. SDK TypeScript, webhooks, sandbox completo.
+        </p>
+        <div class="mt-8 flex gap-4">
+          <a href="/docs/quickstart/" class="bg-green-500 hover:bg-green-400 text-black font-semibold px-6 py-3 rounded-lg transition-colors">Comece agora</a>
+          <a href="/docs/" class="border border-gray-700 hover:border-gray-500 text-gray-300 font-medium px-6 py-3 rounded-lg transition-colors">Ver docs</a>
+        </div>
+      </div>
+      <div class="code-block">
+        <pre><span class="kw">import</span> { Fio } <span class="kw">from</span> <span class="str">'@fio-pay/sdk'</span>
+
+<span class="kw">const</span> fio = <span class="kw">new</span> <span class="fn">Fio</span>({ apiKey: <span class="str">'fio_test_...'</span> })
+
+<span class="kw">const</span> sub = <span class="kw">await</span> fio.subscriptions.<span class="fn">create</span>({
+  customer_id: <span class="str">'cus_abc123'</span>,
+  plan_id: <span class="str">'plan_xyz789'</span>,
+})
+
+console.<span class="fn">log</span>(sub.status) <span class="cm">// "trialing"</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="max-w-6xl mx-auto px-6 py-20 border-t border-gray-800">
+    <h2 class="text-3xl font-bold text-center mb-16">Como funciona</h2>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
+        <div class="text-3xl mb-4">📋</div>
+        <h3 class="text-xl font-semibold mb-3">Crie planos e assinaturas</h3>
+        <p class="text-gray-400 leading-relaxed">Defina preço, intervalo e período de trial. A API cuida do ciclo de cobrança automaticamente.</p>
+      </div>
+      <div class="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
+        <div class="text-3xl mb-4">⚡</div>
+        <h3 class="text-xl font-semibold mb-3">Receba via PIX</h3>
+        <p class="text-gray-400 leading-relaxed">QR code gerado automaticamente. Pagamentos confirmados por webhook em tempo real.</p>
+      </div>
+      <div class="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
+        <div class="text-3xl mb-4">🔧</div>
+        <h3 class="text-xl font-semibold mb-3">Gerencie tudo por API</h3>
+        <p class="text-gray-400 leading-relaxed">Dunning automático, pausar/cancelar/retomar assinaturas, métricas de MRR e churn.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Code example -->
+  <section class="max-w-6xl mx-auto px-6 py-20 border-t border-gray-800">
+    <h2 class="text-3xl font-bold text-center mb-4">Sua primeira cobrança em 6 linhas</h2>
+    <p class="text-gray-400 text-center mb-12 max-w-2xl mx-auto">Do SDK instalado ao pagamento confirmado — tudo no sandbox, sem cadastro de gateway.</p>
+    <div class="max-w-3xl mx-auto code-block">
+      <pre><span class="kw">import</span> { Fio } <span class="kw">from</span> <span class="str">'@fio-pay/sdk'</span>
+
+<span class="kw">const</span> fio = <span class="kw">new</span> <span class="fn">Fio</span>({ apiKey: <span class="str">'fio_test_sua_chave'</span> })
+
+<span class="cm">// 1. Crie um cliente</span>
+<span class="kw">const</span> customer = <span class="kw">await</span> fio.customers.<span class="fn">create</span>({
+  name: <span class="str">'João Silva'</span>,
+  email: <span class="str">'joao@example.com'</span>,
+  tax_id: <span class="str">'52998224725'</span>,
+  tax_id_type: <span class="str">'cpf'</span>,
+})
+
+<span class="cm">// 2. Gere uma cobrança PIX</span>
+<span class="kw">const</span> charge = <span class="kw">await</span> fio.charges.<span class="fn">create</span>({
+  customer_id: customer.id,
+  amount: <span class="num">4990</span>, <span class="cm">// R$ 49,90</span>
+  expires_in: <span class="num">3600</span>,
+})
+
+console.<span class="fn">log</span>(charge.pix_qr_code) <span class="cm">// Copia-e-cola do PIX</span>
+
+<span class="cm">// 3. (Sandbox) Simule o pagamento</span>
+<span class="kw">await</span> fio.test.<span class="fn">simulatePayment</span>(charge.id)
+
+<span class="kw">const</span> paid = <span class="kw">await</span> fio.charges.<span class="fn">get</span>(charge.id)
+console.<span class="fn">log</span>(paid.status) <span class="cm">// "paid" ✅</span></pre>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="max-w-6xl mx-auto px-6 py-20 border-t border-gray-800">
+    <h2 class="text-3xl font-bold text-center mb-4">Simples e transparente</h2>
+    <p class="text-gray-400 text-center mb-12">Sem mensalidade. Sem setup. Sem surpresa.</p>
+    <div class="max-w-md mx-auto bg-gray-900/50 border border-gray-800 rounded-xl p-10 text-center">
+      <div class="text-5xl font-bold gradient-text mb-2">1,49%</div>
+      <div class="text-gray-400 mb-6">por cobrança PIX</div>
+      <ul class="text-left text-gray-300 space-y-3 mb-8">
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Sandbox grátis e ilimitado</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Sem limite de transações</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Webhooks inclusos</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> SDK TypeScript completo</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Suporte por Discord</li>
+      </ul>
+      <a href="/docs/quickstart/" class="block w-full bg-green-500 hover:bg-green-400 text-black font-semibold px-6 py-3 rounded-lg transition-colors">Comece agora — grátis no sandbox</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="max-w-6xl mx-auto px-6 py-12 border-t border-gray-800">
+    <div class="text-center">
+      <h2 class="text-2xl font-bold mb-4">Sua primeira cobrança PIX em 5 minutos</h2>
+      <a href="/docs/quickstart/" class="inline-block bg-green-500 hover:bg-green-400 text-black font-semibold px-8 py-3 rounded-lg transition-colors mb-8">Comece agora</a>
+      <div class="flex items-center justify-center gap-6 text-sm text-gray-500">
+        <a href="/docs/" class="hover:text-gray-300 transition-colors">Docs</a>
+        <a href="https://github.com/LucasGalhardoLima/fio" target="_blank" rel="noopener" class="hover:text-gray-300 transition-colors">GitHub</a>
+      </div>
+      <p class="text-gray-600 text-sm mt-6">© 2026 Fio</p>
+    </div>
+  </footer>
+
+</body>
+</html>
