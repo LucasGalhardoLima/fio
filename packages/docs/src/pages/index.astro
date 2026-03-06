@@ -1,45 +1,46 @@
 ---
 // Custom landing page — not managed by Starlight
 import '../styles/landing.css'
+import { Code } from 'astro:components'
+import githubDark from 'shiki/themes/github-dark.mjs'
 
-// Code snippets as raw HTML strings to avoid Astro parsing curly braces as expressions
-const heroCode = `<span class="kw">import</span> { Fio } <span class="kw">from</span> <span class="str">'@fio-pay/sdk'</span>
+const heroCode = `import { Fio } from '@fio-pay/sdk'
 
-<span class="kw">const</span> fio = <span class="kw">new</span> <span class="fn">Fio</span>({ apiKey: <span class="str">'fio_test_...'</span> })
+const fio = new Fio({ apiKey: 'fio_test_...' })
 
-<span class="kw">const</span> sub = <span class="kw">await</span> fio.subscriptions.<span class="fn">create</span>({
-  customer_id: <span class="str">'cus_abc123'</span>,
-  plan_id: <span class="str">'plan_xyz789'</span>,
+const sub = await fio.subscriptions.create({
+  customer_id: 'cus_abc123',
+  plan_id: 'plan_xyz789',
 })
 
-console.<span class="fn">log</span>(sub.status) <span class="cm">// "trialing"</span>`
+console.log(sub.status) // "trialing"`
 
-const fullCode = `<span class="kw">import</span> { Fio } <span class="kw">from</span> <span class="str">'@fio-pay/sdk'</span>
+const fullCode = `import { Fio } from '@fio-pay/sdk'
 
-<span class="kw">const</span> fio = <span class="kw">new</span> <span class="fn">Fio</span>({ apiKey: <span class="str">'fio_test_sua_chave'</span> })
+const fio = new Fio({ apiKey: 'fio_test_sua_chave' })
 
-<span class="cm">// 1. Crie um cliente</span>
-<span class="kw">const</span> customer = <span class="kw">await</span> fio.customers.<span class="fn">create</span>({
-  name: <span class="str">'Jo\u00e3o Silva'</span>,
-  email: <span class="str">'joao@example.com'</span>,
-  tax_id: <span class="str">'52998224725'</span>,
-  tax_id_type: <span class="str">'cpf'</span>,
+// 1. Crie um cliente
+const customer = await fio.customers.create({
+  name: 'João Silva',
+  email: 'joao@example.com',
+  tax_id: '52998224725',
+  tax_id_type: 'cpf',
 })
 
-<span class="cm">// 2. Gere uma cobran\u00e7a PIX</span>
-<span class="kw">const</span> charge = <span class="kw">await</span> fio.charges.<span class="fn">create</span>({
+// 2. Gere uma cobrança PIX
+const charge = await fio.charges.create({
   customer_id: customer.id,
-  amount: <span class="num">4990</span>, <span class="cm">// R$ 49,90</span>
-  expires_in: <span class="num">3600</span>,
+  amount: 4990, // R$ 49,90
+  expires_in: 3600,
 })
 
-console.<span class="fn">log</span>(charge.pix_qr_code) <span class="cm">// Copia-e-cola do PIX</span>
+console.log(charge.pix_qr_code) // Copia-e-cola do PIX
 
-<span class="cm">// 3. (Sandbox) Simule o pagamento</span>
-<span class="kw">await</span> fio.test.<span class="fn">simulatePayment</span>(charge.id)
+// 3. (Sandbox) Simule o pagamento
+await fio.test.simulatePayment(charge.id)
 
-<span class="kw">const</span> paid = <span class="kw">await</span> fio.charges.<span class="fn">get</span>(charge.id)
-console.<span class="fn">log</span>(paid.status) <span class="cm">// "paid" \u2705</span>`
+const paid = await fio.charges.get(charge.id)
+console.log(paid.status) // "paid" ✅`
 ---
 <html lang="pt-BR" class="dark">
 <head>
@@ -61,98 +62,174 @@ console.<span class="fn">log</span>(paid.status) <span class="cm">// "paid" \u27
 <body class="bg-[#030712] text-gray-100 antialiased">
 
   <!-- Nav -->
-  <nav class="max-w-6xl mx-auto flex items-center justify-between px-6 py-5">
-    <a href="/" class="text-xl font-bold text-white">Fio</a>
-    <div class="flex items-center gap-6 text-sm">
-      <a href="/docs/" class="text-gray-400 hover:text-white transition-colors">Docs</a>
-      <a href="#pricing" class="text-gray-400 hover:text-white transition-colors">Preços</a>
-      <a href="https://github.com/LucasGalhardoLima/fio" target="_blank" rel="noopener" class="text-gray-400 hover:text-white transition-colors">GitHub</a>
-      <a href="/docs/quickstart/" class="bg-green-500 hover:bg-green-400 text-black font-medium px-4 py-2 rounded-lg transition-colors">Comece agora</a>
+  <nav class="nav-sticky" id="main-nav">
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
+      <a href="/" class="text-xl font-bold text-white tracking-tight relative z-[60]">Fio</a>
+
+      <button class="hamburger" id="menu-toggle" aria-label="Abrir menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <div class="nav-links" id="nav-links">
+        <a href="/docs/" class="text-gray-400 hover:text-white transition-colors text-sm">Docs</a>
+        <a href="#pricing" class="text-gray-400 hover:text-white transition-colors text-sm">Precos</a>
+        <a href="https://github.com/LucasGalhardoLima/fio" target="_blank" rel="noopener" class="text-gray-400 hover:text-white transition-colors text-sm">GitHub</a>
+        <a href="/docs/quickstart/" class="btn-primary text-sm !py-2 !px-4">Comece agora</a>
+      </div>
     </div>
   </nav>
 
   <!-- Hero -->
-  <section class="max-w-6xl mx-auto px-6 pt-20 pb-24">
-    <div class="grid md:grid-cols-2 gap-12 items-center">
-      <div>
-        <h1 class="text-4xl sm:text-5xl font-bold leading-tight">
-          Cobrança recorrente via PIX <span class="gradient-text">pra devs</span>
-        </h1>
-        <p class="mt-6 text-lg text-gray-400 leading-relaxed">
-          Integre assinaturas PIX no seu SaaS em minutos. SDK TypeScript, webhooks, sandbox completo.
-        </p>
-        <div class="mt-8 flex gap-4">
-          <a href="/docs/quickstart/" class="bg-green-500 hover:bg-green-400 text-black font-semibold px-6 py-3 rounded-lg transition-colors">Comece agora</a>
-          <a href="/docs/" class="border border-gray-700 hover:border-gray-500 text-gray-300 font-medium px-6 py-3 rounded-lg transition-colors">Ver docs</a>
+  <section class="relative overflow-hidden">
+    <div class="hero-glow"></div>
+    <div class="max-w-6xl mx-auto px-6 pt-24 pb-32 relative z-10">
+      <div class="grid md:grid-cols-2 gap-16 items-center">
+        <div class="reveal">
+          <div class="badge mb-6">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="3" fill="#22c55e"/><circle cx="7" cy="7" r="6" stroke="#22c55e" stroke-opacity="0.4" stroke-width="1"/></svg>
+            Em desenvolvimento
+          </div>
+          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight">
+            <span class="hero-headline">Cobranca recorrente via PIX</span>
+            <br />
+            <span class="gradient-text">pra devs</span>
+          </h1>
+          <p class="mt-6 text-lg text-gray-400 leading-relaxed max-w-lg">
+            Integre assinaturas PIX no seu SaaS em minutos. SDK TypeScript, webhooks, sandbox completo.
+          </p>
+          <div class="mt-10 flex flex-wrap gap-4">
+            <a href="/docs/quickstart/" class="btn-primary">Comece agora</a>
+            <a href="/docs/" class="btn-secondary">Ver docs</a>
+          </div>
+        </div>
+        <div class="reveal code-glow">
+          <Code code={heroCode} lang="typescript" theme={githubDark} />
         </div>
       </div>
-      <div class="code-block">
-        <pre set:html={heroCode} />
-      </div>
     </div>
   </section>
+
+  <div class="section-divider"></div>
 
   <!-- How it works -->
-  <section class="max-w-6xl mx-auto px-6 py-20 border-t border-gray-800">
-    <h2 class="text-3xl font-bold text-center mb-16">Como funciona</h2>
-    <div class="grid md:grid-cols-3 gap-8">
-      <div class="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
-        <div class="text-3xl mb-4">📋</div>
-        <h3 class="text-xl font-semibold mb-3">Crie planos e assinaturas</h3>
-        <p class="text-gray-400 leading-relaxed">Defina preço, intervalo e período de trial. A API cuida do ciclo de cobrança automaticamente.</p>
+  <section class="max-w-6xl mx-auto px-6 py-28">
+    <div class="text-center mb-16 reveal">
+      <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">Como funciona</h2>
+      <p class="mt-4 text-gray-400 max-w-xl mx-auto">Tres passos para cobrar seus clientes com PIX recorrente.</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6 reveal-stagger">
+      <div class="feature-card reveal">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <h3 class="text-lg font-semibold mb-2 text-white">Crie planos e assinaturas</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">Defina preco, intervalo e periodo de trial. A API cuida do ciclo de cobranca automaticamente.</p>
       </div>
-      <div class="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
-        <div class="text-3xl mb-4">⚡</div>
-        <h3 class="text-xl font-semibold mb-3">Receba via PIX</h3>
-        <p class="text-gray-400 leading-relaxed">QR code gerado automaticamente. Pagamentos confirmados por webhook em tempo real.</p>
+      <div class="feature-card reveal">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <h3 class="text-lg font-semibold mb-2 text-white">Receba via PIX</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">QR code gerado automaticamente. Pagamentos confirmados por webhook em tempo real.</p>
       </div>
-      <div class="bg-gray-900/50 border border-gray-800 rounded-xl p-8">
-        <div class="text-3xl mb-4">🔧</div>
-        <h3 class="text-xl font-semibold mb-3">Gerencie tudo por API</h3>
-        <p class="text-gray-400 leading-relaxed">Dunning automático, pausar/cancelar/retomar assinaturas, métricas de MRR e churn.</p>
+      <div class="feature-card reveal">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </div>
+        <h3 class="text-lg font-semibold mb-2 text-white">Gerencie tudo por API</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">Dunning automatico, pausar/cancelar/retomar assinaturas, metricas de MRR e churn.</p>
       </div>
     </div>
   </section>
+
+  <div class="section-divider"></div>
 
   <!-- Code example -->
-  <section class="max-w-6xl mx-auto px-6 py-20 border-t border-gray-800">
-    <h2 class="text-3xl font-bold text-center mb-4">Sua primeira cobrança em 6 linhas</h2>
-    <p class="text-gray-400 text-center mb-12 max-w-2xl mx-auto">Do SDK instalado ao pagamento confirmado — tudo no sandbox, sem cadastro de gateway.</p>
-    <div class="max-w-3xl mx-auto code-block">
-      <pre set:html={fullCode} />
+  <section class="max-w-6xl mx-auto px-6 py-28">
+    <div class="text-center mb-14 reveal">
+      <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">Sua primeira cobranca em 6 linhas</h2>
+      <p class="mt-4 text-gray-400 max-w-2xl mx-auto">Do SDK instalado ao pagamento confirmado &mdash; tudo no sandbox, sem cadastro de gateway.</p>
+    </div>
+    <div class="max-w-3xl mx-auto reveal code-glow">
+      <Code code={fullCode} lang="typescript" theme={githubDark} />
     </div>
   </section>
+
+  <div class="section-divider"></div>
 
   <!-- Pricing -->
-  <section id="pricing" class="max-w-6xl mx-auto px-6 py-20 border-t border-gray-800">
-    <h2 class="text-3xl font-bold text-center mb-4">Simples e transparente</h2>
-    <p class="text-gray-400 text-center mb-12">Sem mensalidade. Sem setup. Sem surpresa.</p>
-    <div class="max-w-md mx-auto bg-gray-900/50 border border-gray-800 rounded-xl p-10 text-center">
-      <div class="text-5xl font-bold gradient-text mb-2">1,49%</div>
-      <div class="text-gray-400 mb-6">por cobrança PIX</div>
-      <ul class="text-left text-gray-300 space-y-3 mb-8">
-        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Sandbox grátis e ilimitado</li>
-        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Sem limite de transações</li>
-        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Webhooks inclusos</li>
-        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> SDK TypeScript completo</li>
-        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Suporte por Discord</li>
-      </ul>
-      <a href="/docs/quickstart/" class="block w-full bg-green-500 hover:bg-green-400 text-black font-semibold px-6 py-3 rounded-lg transition-colors">Comece agora — grátis no sandbox</a>
+  <section id="pricing" class="max-w-6xl mx-auto px-6 py-28">
+    <div class="text-center mb-14 reveal">
+      <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">Simples e transparente</h2>
+      <p class="mt-4 text-gray-400">Sem mensalidade. Sem setup. Sem surpresa.</p>
+    </div>
+    <div class="max-w-md mx-auto reveal">
+      <div class="pricing-card text-center">
+        <div class="text-5xl sm:text-6xl font-bold gradient-text mb-2">1,49%</div>
+        <div class="text-gray-400 mb-8">por cobranca PIX</div>
+        <ul class="check-list text-left text-gray-300 text-sm space-y-2 mb-10">
+          <li>Sandbox gratis e ilimitado</li>
+          <li>Sem limite de transacoes</li>
+          <li>Webhooks inclusos</li>
+          <li>SDK TypeScript completo</li>
+          <li>Suporte por Discord</li>
+        </ul>
+        <a href="/docs/quickstart/" class="btn-primary w-full">Comece agora &mdash; gratis no sandbox</a>
+      </div>
     </div>
   </section>
 
+  <div class="section-divider"></div>
+
   <!-- Footer -->
-  <footer class="max-w-6xl mx-auto px-6 py-12 border-t border-gray-800">
-    <div class="text-center">
-      <h2 class="text-2xl font-bold mb-4">Sua primeira cobrança PIX em 5 minutos</h2>
-      <a href="/docs/quickstart/" class="inline-block bg-green-500 hover:bg-green-400 text-black font-semibold px-8 py-3 rounded-lg transition-colors mb-8">Comece agora</a>
-      <div class="flex items-center justify-center gap-6 text-sm text-gray-500">
-        <a href="/docs/" class="hover:text-gray-300 transition-colors">Docs</a>
-        <a href="https://github.com/LucasGalhardoLima/fio" target="_blank" rel="noopener" class="hover:text-gray-300 transition-colors">GitHub</a>
+  <footer class="footer-gradient">
+    <div class="max-w-6xl mx-auto px-6 py-20">
+      <div class="text-center reveal">
+        <h2 class="text-2xl sm:text-3xl font-bold mb-4 tracking-tight">Sua primeira cobranca PIX em 5 minutos</h2>
+        <p class="text-gray-400 mb-8 max-w-md mx-auto">Crie sua conta no sandbox, instale o SDK e gere sua primeira cobranca.</p>
+        <a href="/docs/quickstart/" class="btn-primary mb-10 inline-flex">Comece agora</a>
+        <div class="flex items-center justify-center gap-8 text-sm text-gray-500 mt-10">
+          <a href="/docs/" class="hover:text-gray-300 transition-colors">Docs</a>
+          <a href="https://github.com/LucasGalhardoLima/fio" target="_blank" rel="noopener" class="hover:text-gray-300 transition-colors">GitHub</a>
+        </div>
+        <p class="text-gray-600 text-sm mt-8">&copy; 2026 Fio</p>
       </div>
-      <p class="text-gray-600 text-sm mt-6">© 2026 Fio</p>
     </div>
   </footer>
+
+  <!-- Scripts: mobile nav toggle + scroll reveal + nav scroll state -->
+  <script>
+    // Mobile hamburger toggle
+    const toggle = document.getElementById('menu-toggle');
+    const nav = document.getElementById('main-nav');
+    if (toggle && nav) {
+      toggle.addEventListener('click', () => {
+        const open = nav.getAttribute('data-menu-open') === 'true';
+        nav.setAttribute('data-menu-open', open ? 'false' : 'true');
+      });
+      // Close menu when a nav link is clicked
+      document.querySelectorAll('#nav-links a').forEach(link => {
+        link.addEventListener('click', () => nav.setAttribute('data-menu-open', 'false'));
+      });
+    }
+
+    // Scroll reveal via IntersectionObserver
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    reveals.forEach(el => observer.observe(el));
+
+    // Nav border on scroll
+    const navEl = document.getElementById('main-nav');
+    if (navEl) {
+      window.addEventListener('scroll', () => {
+        navEl.classList.toggle('scrolled', window.scrollY > 20);
+      }, { passive: true });
+    }
+  </script>
 
 </body>
 </html>
