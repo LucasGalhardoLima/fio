@@ -4,6 +4,10 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   site: 'https://fiopay-docs.vercel.app',
+  redirects: {
+    '/docs/': '/docs/quickstart/',
+    '/docs': '/docs/quickstart/',
+  },
   integrations: [
     starlight({
       title: 'Fio',
