@@ -21,6 +21,8 @@ import { subscriptionRoutes } from '../../src/routes/v1/subscriptions.js'
 import { invoiceRoutes } from '../../src/routes/v1/invoices.js'
 import { webhookEndpointRoutes } from '../../src/routes/v1/webhook-endpoints.js'
 import { testRoutes } from '../../src/routes/v1/test.js'
+import { metricsRoutes } from '../../src/routes/v1/metrics.js'
+import { healthRoutes } from '../../src/routes/health.js'
 import { fioErrorHandler } from '../../src/lib/errors.js'
 import { MockPaymentProvider } from '../../src/providers/mock-provider.js'
 
@@ -72,6 +74,8 @@ export async function createTestApp(db?: Kysely<Database>): Promise<FastifyInsta
   await app.register(invoiceRoutes)
   await app.register(webhookEndpointRoutes)
   await app.register(testRoutes)
+  await app.register(metricsRoutes)
+  await app.register(healthRoutes)
 
   await app.ready()
   return app
