@@ -21,9 +21,12 @@ import {
   cleanupDatabase,
 } from '../helpers/setup.js'
 
-// CI-safe thresholds (remote DB adds ~100ms roundtrip per query)
-const MIN_RPS = 50
-const MAX_P95_MS = 500
+// Detect remote DB (NeonDB, Supabase, etc.) and relax thresholds
+const isRemoteDb = /neon|pooler|supabase|railway/.test(
+  process.env['DATABASE_URL'] ?? '',
+)
+const MIN_RPS = isRemoteDb ? 20 : 50
+const MAX_P95_MS = isRemoteDb ? 1000 : 500
 
 describe('Load tests', () => {
   let app: FastifyInstance
