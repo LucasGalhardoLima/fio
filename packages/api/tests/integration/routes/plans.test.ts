@@ -125,7 +125,7 @@ describe('Plans — /v1/plans', () => {
     it('returns 404 for non-existent plan', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: '/v1/plans/pln_nonexistent',
+        url: '/v1/plans/00000000-0000-0000-0000-000000000000',
         headers: { authorization: `Bearer ${apiKey}` },
       })
       expect(res.statusCode).toBe(404)

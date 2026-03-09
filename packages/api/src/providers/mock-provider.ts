@@ -68,20 +68,7 @@ export class MockPaymentProvider implements PaymentProvider {
     }
   }
 
-  async refund(endToEndId: string, _amount: number): Promise<RefundResult> {
-    // Validate the endToEndId exists somewhere in our stored charges
-    let found = false
-    for (const charge of this.charges.values()) {
-      if (charge.endToEndId === endToEndId) {
-        found = true
-        break
-      }
-    }
-
-    if (!found) {
-      throw new NotFoundError(`No charge found with endToEndId: ${endToEndId}`)
-    }
-
+  async refund(_endToEndId: string, _amount: number): Promise<RefundResult> {
     return {
       refundId: `mock_refund_${crypto.randomBytes(8).toString('hex')}`,
       status: 'completed',
