@@ -1,6 +1,20 @@
+import type { Worker } from 'bullmq'
 import { buildApp } from './app.js'
 import { closeDatabase } from './db/connection.js'
-import { closeQueues } from './jobs/queue-setup.js'
+import {
+  closeQueues,
+  getBillingCycleQueue,
+  getChargeExpirationQueue,
+  getIdempotencyCleanupQueue,
+  getApiKeyRevocationQueue,
+} from './jobs/queue-setup.js'
+import { startBillingCycleWorker } from './jobs/billing-cycle.js'
+import { startDunningRetryWorker } from './jobs/dunning-retry.js'
+import { startWebhookDeliveryWorker } from './jobs/webhook-delivery.js'
+import { startChargeExpirationWorker } from './jobs/charge-expiration.js'
+import { startIdempotencyCleanupWorker } from './jobs/idempotency-cleanup.js'
+import { startPixAutomaticoConsentWorker } from './jobs/pix-automatico-consent.js'
+import { startApiKeyRevocationWorker } from './jobs/api-key-revocation.js'
 import { customerRoutes } from './routes/v1/customers.js'
 import { chargeRoutes } from './routes/v1/charges.js'
 import { planRoutes } from './routes/v1/plans.js'
@@ -69,11 +83,44 @@ async function start(): Promise<void> {
   await app.listen({ port, host })
   app.log.info(`Server listening on ${host}:${port}`)
 
+  // Start background workers (requires REDIS_URL)
+  const workers: Worker[] = []
+  if (process.env['REDIS_URL']) {
+    workers.push(
+      startBillingCycleWorker({ provider, pixKey }),
+      startDunningRetryWorker({ provider, pixKey }),
+      startWebhookDeliveryWorker(),
+      startChargeExpirationWorker(),
+      startIdempotencyCleanupWorker(),
+      startPixAutomaticoConsentWorker({ provider }),
+      startApiKeyRevocationWorker(),
+    )
+
+    // Schedule periodic jobs
+    await getBillingCycleQueue().add('billing-cycle', {}, {
+      repeat: { every: 60_000 }, // every minute
+    })
+    await getChargeExpirationQueue().add('charge-expiration', {}, {
+      repeat: { every: 60_000 }, // every minute
+    })
+    await getIdempotencyCleanupQueue().add('idempotency-cleanup', {}, {
+      repeat: { every: 3_600_000 }, // every hour
+    })
+    await getApiKeyRevocationQueue().add('api-key-revocation', {}, {
+      repeat: { every: 3_600_000 }, // every hour
+    })
+
+    app.log.info(`Started ${workers.length} background workers`)
+  } else {
+    app.log.warn('REDIS_URL not set — background workers disabled')
+  }
+
   // Graceful shutdown
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`Received ${signal}, shutting down gracefully...`)
 
     try {
+      await Promise.all(workers.map((w) => w.close()))
       await app.close()
       await closeDatabase()
       await closeQueues()
