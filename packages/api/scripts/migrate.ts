@@ -1,4 +1,4 @@
-import { Kysely, PostgresDialect } from 'kysely'
+import { Kysely, PostgresDialect, sql } from 'kysely'
 import pg from 'pg'
 import { up } from '../src/db/migrations/001-initial-schema.js'
 
@@ -19,6 +19,19 @@ async function main(): Promise<void> {
   })
 
   try {
+    // Check if schema already exists
+    const result = await sql<{ exists: boolean }>`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'accounts'
+      )
+    `.execute(db)
+
+    if (result.rows[0]?.exists) {
+      console.log('Schema already exists — skipping migration')
+      return
+    }
+
     await up(db)
     console.log('Migration complete')
   } catch (e: unknown) {
