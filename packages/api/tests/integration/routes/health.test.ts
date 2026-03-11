@@ -36,20 +36,11 @@ describe('Health — /health', () => {
         status: 'ok' | 'degraded'
         checks: {
           database: 'ok' | 'error'
-          redis: 'ok' | 'error'
         }
       }>()
 
       expect(body.checks.database).toBe('ok')
-      // Redis may or may not be available in test; just check the shape
-      expect(['ok', 'error']).toContain(body.checks.redis)
-
-      // Overall status depends on both checks
-      if (body.checks.database === 'ok' && body.checks.redis === 'ok') {
-        expect(body.status).toBe('ok')
-      } else {
-        expect(body.status).toBe('degraded')
-      }
+      expect(body.status).toBe('ok')
     })
 
     it('does not require authentication', async () => {
