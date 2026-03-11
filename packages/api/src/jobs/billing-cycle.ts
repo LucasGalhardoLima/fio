@@ -1,4 +1,4 @@
-import { Worker } from 'bullmq'
+import PgBoss from 'pg-boss'
 import { QUEUE_NAMES } from './queue-setup.js'
 import { getDatabase } from '../db/connection.js'
 import {
@@ -45,118 +45,79 @@ function calculateNextPeriodEnd(current: Date, interval: string): Date {
 }
 
 /**
- * Start the billing cycle worker.
- *
- * Responsibilities:
- * 1. Query subscriptions due for billing (current_period_end <= now, status=active)
- *    - For each: create invoice + charge, advance period dates
- *    - If cancel_at_period_end is set, transition to canceled instead
- * 2. Check for trial expirations (trial_end <= now, status=trialing)
- *    - Transition to active, generate first charge
+ * Process subscriptions due for billing.
  */
-export function startBillingCycleWorker(opts: BillingCycleOptions): Worker {
-  const { provider, pixKey } = opts
+async function processDueBilling(
+  provider: PaymentProvider,
+  pixKey: string,
+): Promise<number> {
+  const db = getDatabase()
+  let billingProcessed = 0
 
-  const redisUrl = process.env['REDIS_URL']
-  if (!redisUrl) {
-    throw new Error('REDIS_URL environment variable is required')
-  }
+  const dueSubs = await findSubscriptionsDueForBilling(db)
 
-  const worker = new Worker(
-    QUEUE_NAMES.BILLING_CYCLE,
-    async () => {
-      const db = getDatabase()
-      let billingProcessed = 0
-      let trialsProcessed = 0
+  for (const sub of dueSubs) {
+    try {
+      if (sub.cancel_at_period_end) {
+        await transitionSubscription(
+          db,
+          sub.id,
+          SUBSCRIPTION_STATUS.CANCELED,
+          {
+            canceled_at: new Date(),
+            cancellation_reason: CANCELLATION_REASON.DEVELOPER_REQUEST,
+          },
+        )
+        billingProcessed += 1
+        continue
+      }
 
-      // --- 1. Process subscriptions due for billing ---
-      const dueSubs = await findSubscriptionsDueForBilling(db)
+      const plan = await findPlanById(
+        db, sub.plan_id, sub.account_id, sub.environment,
+      )
+      if (!plan) {
+        console.error(`Plan not found for subscription ${sub.id}: ${sub.plan_id}`)
+        continue
+      }
 
-      for (const sub of dueSubs) {
-        try {
-          // If marked for cancellation at period end, cancel now
-          if (sub.cancel_at_period_end) {
-            await transitionSubscription(
-              db,
-              sub.id,
-              SUBSCRIPTION_STATUS.CANCELED,
-              {
-                canceled_at: new Date(),
-                cancellation_reason: CANCELLATION_REASON.DEVELOPER_REQUEST,
-              },
-            )
-            billingProcessed += 1
-            continue
-          }
+      const newPeriodStart = sub.current_period_end
+      const newPeriodEnd = calculateNextPeriodEnd(newPeriodStart, plan.interval)
 
-          const plan = await findPlanById(
-            db, sub.plan_id, sub.account_id, sub.environment,
-          )
-          if (!plan) {
-            console.error(`Plan not found for subscription ${sub.id}: ${sub.plan_id}`)
-            continue
-          }
+      const invoice = await insertInvoice(db, {
+        account_id: sub.account_id,
+        environment: sub.environment,
+        subscription_id: sub.id,
+        customer_id: sub.customer_id,
+        charge_id: null,
+        amount: plan.amount,
+        status: INVOICE_STATUS.DRAFT,
+        period_start: newPeriodStart,
+        period_end: newPeriodEnd,
+        due_date: newPeriodStart,
+        paid_at: null,
+      })
 
-          const newPeriodStart = sub.current_period_end
-          const newPeriodEnd = calculateNextPeriodEnd(newPeriodStart, plan.interval)
+      const openInvoice = await transitionInvoice(
+        db, invoice.id, INVOICE_STATUS.OPEN,
+      )
 
-          // Create invoice for the new period
-          const invoice = await insertInvoice(db, {
-            account_id: sub.account_id,
-            environment: sub.environment,
-            subscription_id: sub.id,
-            customer_id: sub.customer_id,
-            charge_id: null,
-            amount: plan.amount,
-            status: INVOICE_STATUS.DRAFT,
-            period_start: newPeriodStart,
-            period_end: newPeriodEnd,
-            due_date: newPeriodStart,
-            paid_at: null,
-          })
+      let charge
+      let usedAutomaticDebit = false
 
-          // Transition invoice from draft -> open
-          const openInvoice = await transitionInvoice(
-            db, invoice.id, INVOICE_STATUS.OPEN,
-          )
-
-          // Try Pix Automático if subscription has it enabled
-          let charge
-          let usedAutomaticDebit = false
-
-          if (sub.pix_automatico && provider.createAutomaticCharge) {
-            const customer = await findCustomerById(
-              db, sub.customer_id, sub.account_id, sub.environment,
-            )
-            if (
-              customer?.pix_automatico_consent_status === 'authorized' &&
-              customer.pix_automatico_consent_id
-            ) {
-              try {
-                const result = await provider.createAutomaticCharge({
-                  consentId: customer.pix_automatico_consent_id,
-                  amount: plan.amount,
-                  scheduledDate: newPeriodEnd,
-                })
-                charge = await createCharge(db, provider, {
-                  account_id: sub.account_id,
-                  environment: sub.environment,
-                  customer_id: sub.customer_id,
-                  amount: plan.amount,
-                  expires_in: 3600,
-                  pix_key: pixKey,
-                  invoice_id: openInvoice.id,
-                })
-                usedAutomaticDebit = true
-                void result // Automatic charge was initiated
-              } catch {
-                // Fall through to QR code generation
-              }
-            }
-          }
-
-          // Fallback to QR code charge
-          if (!usedAutomaticDebit) {
+      if (sub.pix_automatico && provider.createAutomaticCharge) {
+        const customer = await findCustomerById(
+          db, sub.customer_id, sub.account_id, sub.environment,
+        )
+        if (
+          customer?.pix_automatico_consent_status === 'authorized' &&
+          customer.pix_automatico_consent_id
+        ) {
+          try {
+            const result = await provider.createAutomaticCharge({
+              consentId: customer.pix_automatico_consent_id,
+              amount: plan.amount,
+              scheduledDate: newPeriodEnd,
+            })
             charge = await createCharge(db, provider, {
               account_id: sub.account_id,
               environment: sub.environment,
@@ -166,113 +127,159 @@ export function startBillingCycleWorker(opts: BillingCycleOptions): Worker {
               pix_key: pixKey,
               invoice_id: openInvoice.id,
             })
+            usedAutomaticDebit = true
+            void result
+          } catch {
+            // Fall through to QR code generation
           }
-
-          // Link charge to invoice
-          if (charge) {
-            await db
-              .updateTable('invoices')
-              .set({ charge_id: charge.id })
-              .where('id', '=', openInvoice.id)
-              .execute()
-          }
-
-          // Advance subscription period dates
-          await db
-            .updateTable('subscriptions')
-            .set({
-              current_period_start: newPeriodStart,
-              current_period_end: newPeriodEnd,
-              updated_at: new Date(),
-            })
-            .where('id', '=', sub.id)
-            .execute()
-
-          billingProcessed += 1
-        } catch (error) {
-          console.error(
-            `Failed to process billing for subscription ${sub.id}:`,
-            error instanceof Error ? error.message : 'Unknown error',
-          )
         }
       }
 
-      // --- 2. Process trial expirations ---
-      const expiredTrials = await findTrialExpirations(db)
-
-      for (const sub of expiredTrials) {
-        try {
-          const plan = await findPlanById(
-            db, sub.plan_id, sub.account_id, sub.environment,
-          )
-          if (!plan) {
-            console.error(`Plan not found for subscription ${sub.id}: ${sub.plan_id}`)
-            continue
-          }
-
-          const now = new Date()
-          const periodEnd = calculateNextPeriodEnd(now, plan.interval)
-
-          // Transition trialing -> active via state machine
-          await transitionSubscription(
-            db,
-            sub.id,
-            SUBSCRIPTION_STATUS.ACTIVE,
-            {
-              current_period_start: now,
-              current_period_end: periodEnd,
-              trial_end: null,
-            },
-          )
-
-          // Generate first charge for the now-active subscription
-          const invoice = await insertInvoice(db, {
-            account_id: sub.account_id,
-            environment: sub.environment,
-            subscription_id: sub.id,
-            customer_id: sub.customer_id,
-            charge_id: null,
-            amount: plan.amount,
-            status: INVOICE_STATUS.DRAFT,
-            period_start: now,
-            period_end: periodEnd,
-            due_date: now,
-            paid_at: null,
-          })
-
-          const openInvoice = await transitionInvoice(
-            db, invoice.id, INVOICE_STATUS.OPEN,
-          )
-
-          const charge = await createCharge(db, provider, {
-            account_id: sub.account_id,
-            environment: sub.environment,
-            customer_id: sub.customer_id,
-            amount: plan.amount,
-            expires_in: 3600,
-            pix_key: pixKey,
-            invoice_id: openInvoice.id,
-          })
-
-          await db
-            .updateTable('invoices')
-            .set({ charge_id: charge.id })
-            .where('id', '=', openInvoice.id)
-            .execute()
-
-          trialsProcessed += 1
-        } catch (error) {
-          console.error(
-            `Failed to process trial expiration for subscription ${sub.id}:`,
-            error instanceof Error ? error.message : 'Unknown error',
-          )
-        }
+      if (!usedAutomaticDebit) {
+        charge = await createCharge(db, provider, {
+          account_id: sub.account_id,
+          environment: sub.environment,
+          customer_id: sub.customer_id,
+          amount: plan.amount,
+          expires_in: 3600,
+          pix_key: pixKey,
+          invoice_id: openInvoice.id,
+        })
       }
 
+      if (charge) {
+        await db
+          .updateTable('invoices')
+          .set({ charge_id: charge.id })
+          .where('id', '=', openInvoice.id)
+          .execute()
+      }
+
+      await db
+        .updateTable('subscriptions')
+        .set({
+          current_period_start: newPeriodStart,
+          current_period_end: newPeriodEnd,
+          updated_at: new Date(),
+        })
+        .where('id', '=', sub.id)
+        .execute()
+
+      billingProcessed += 1
+    } catch (error) {
+      console.error(
+        `Failed to process billing for subscription ${sub.id}:`,
+        error instanceof Error ? error.message : 'Unknown error',
+      )
+    }
+  }
+
+  return billingProcessed
+}
+
+/**
+ * Process trial expirations.
+ */
+async function processTrialExpirations(
+  provider: PaymentProvider,
+  pixKey: string,
+): Promise<number> {
+  const db = getDatabase()
+  let trialsProcessed = 0
+
+  const expiredTrials = await findTrialExpirations(db)
+
+  for (const sub of expiredTrials) {
+    try {
+      const plan = await findPlanById(
+        db, sub.plan_id, sub.account_id, sub.environment,
+      )
+      if (!plan) {
+        console.error(`Plan not found for subscription ${sub.id}: ${sub.plan_id}`)
+        continue
+      }
+
+      const now = new Date()
+      const periodEnd = calculateNextPeriodEnd(now, plan.interval)
+
+      await transitionSubscription(
+        db,
+        sub.id,
+        SUBSCRIPTION_STATUS.ACTIVE,
+        {
+          current_period_start: now,
+          current_period_end: periodEnd,
+          trial_end: null,
+        },
+      )
+
+      const invoice = await insertInvoice(db, {
+        account_id: sub.account_id,
+        environment: sub.environment,
+        subscription_id: sub.id,
+        customer_id: sub.customer_id,
+        charge_id: null,
+        amount: plan.amount,
+        status: INVOICE_STATUS.DRAFT,
+        period_start: now,
+        period_end: periodEnd,
+        due_date: now,
+        paid_at: null,
+      })
+
+      const openInvoice = await transitionInvoice(
+        db, invoice.id, INVOICE_STATUS.OPEN,
+      )
+
+      const charge = await createCharge(db, provider, {
+        account_id: sub.account_id,
+        environment: sub.environment,
+        customer_id: sub.customer_id,
+        amount: plan.amount,
+        expires_in: 3600,
+        pix_key: pixKey,
+        invoice_id: openInvoice.id,
+      })
+
+      await db
+        .updateTable('invoices')
+        .set({ charge_id: charge.id })
+        .where('id', '=', openInvoice.id)
+        .execute()
+
+      trialsProcessed += 1
+    } catch (error) {
+      console.error(
+        `Failed to process trial expiration for subscription ${sub.id}:`,
+        error instanceof Error ? error.message : 'Unknown error',
+      )
+    }
+  }
+
+  return trialsProcessed
+}
+
+/**
+ * Register the billing cycle worker with pg-boss.
+ *
+ * Schedules a cron job that runs every minute to:
+ * 1. Bill subscriptions due for renewal
+ * 2. Transition expired trials to active
+ */
+export async function registerBillingCycleWorker(
+  boss: PgBoss,
+  opts: BillingCycleOptions,
+): Promise<void> {
+  const { provider, pixKey } = opts
+
+  await boss.work(
+    QUEUE_NAMES.BILLING_CYCLE,
+    async () => {
+      const billingProcessed = await processDueBilling(provider, pixKey)
+      const trialsProcessed = await processTrialExpirations(provider, pixKey)
       return { billingProcessed, trialsProcessed }
     },
-    { connection: { url: redisUrl, maxRetriesPerRequest: null } },
   )
 
-  return worker
+  await boss.schedule(QUEUE_NAMES.BILLING_CYCLE, '*/1 * * * *')
 }

@@ -1,15 +1,13 @@
-import { Worker, Queue } from 'bullmq'
+import PgBoss from 'pg-boss'
 import { QUEUE_NAMES } from './queue-setup.js'
 import { getDatabase } from '../db/connection.js'
 import { findSubscriptionById } from '../db/queries/subscriptions.js'
 import { findPlanById } from '../db/queries/plans.js'
 import { findInvoiceById } from '../db/queries/invoices.js'
 import { transitionSubscription } from '../domain/subscription-state-machine.js'
-import { transitionInvoice } from '../domain/invoice-state-machine.js'
 import { createCharge } from '../services/charge-service.js'
 import {
   SUBSCRIPTION_STATUS,
-  INVOICE_STATUS,
   CANCELLATION_REASON,
 } from '@fio-pay/shared'
 import type { PaymentProvider } from '../providers/payment-provider.js'
@@ -34,7 +32,7 @@ interface DunningRetryOptions {
  * queues the next retry with an appropriate delay.
  */
 export async function scheduleDunningRetry(
-  queue: Queue,
+  boss: PgBoss,
   data: DunningJobData,
 ): Promise<void> {
   const db = getDatabase()
@@ -76,40 +74,40 @@ export async function scheduleDunningRetry(
     return
   }
 
-  // Schedule the retry with delay based on dunning_schedule (days -> ms)
+  // Schedule the retry with delay based on dunning_schedule (days -> seconds)
   const delayDays = schedule[data.retry_index]
   if (delayDays === undefined) {
     return
   }
 
-  const delayMs = delayDays * 24 * 60 * 60 * 1000
+  const delaySeconds = delayDays * 24 * 60 * 60
 
-  await queue.add(
-    'dunning-retry',
+  await boss.send(
+    QUEUE_NAMES.DUNNING_RETRY,
     data,
-    { delay: delayMs },
+    { startAfter: delaySeconds },
   )
 }
 
 /**
- * Start the dunning retry worker.
+ * Register the dunning retry worker with pg-boss.
  *
  * On each retry:
  * 1. Look up subscription, plan, and invoice
  * 2. Create a new PIX charge for the invoice amount
  * 3. If all retries exhausted, cancel the subscription with reason=dunning_failed
  */
-export function startDunningRetryWorker(opts: DunningRetryOptions): Worker<DunningJobData> {
+export async function registerDunningRetryWorker(
+  boss: PgBoss,
+  opts: DunningRetryOptions,
+): Promise<void> {
   const { provider, pixKey } = opts
 
-  const redisUrl = process.env['REDIS_URL']
-  if (!redisUrl) {
-    throw new Error('REDIS_URL environment variable is required')
-  }
-
-  const worker = new Worker<DunningJobData>(
+  await boss.work<DunningJobData>(
     QUEUE_NAMES.DUNNING_RETRY,
-    async (job) => {
+    async (jobs) => {
+      const job = jobs[0]
+      if (!job) return
       const db = getDatabase()
       const data = job.data
 
@@ -188,8 +186,5 @@ export function startDunningRetryWorker(opts: DunningRetryOptions): Worker<Dunni
         charge_id: charge.id,
       }
     },
-    { connection: { url: redisUrl, maxRetriesPerRequest: null } },
   )
-
-  return worker
 }

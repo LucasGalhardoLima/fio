@@ -1,20 +1,13 @@
-import type { Worker } from 'bullmq'
 import { buildApp } from './app.js'
 import { closeDatabase } from './db/connection.js'
-import {
-  closeQueues,
-  getBillingCycleQueue,
-  getChargeExpirationQueue,
-  getIdempotencyCleanupQueue,
-  getApiKeyRevocationQueue,
-} from './jobs/queue-setup.js'
-import { startBillingCycleWorker } from './jobs/billing-cycle.js'
-import { startDunningRetryWorker } from './jobs/dunning-retry.js'
-import { startWebhookDeliveryWorker } from './jobs/webhook-delivery.js'
-import { startChargeExpirationWorker } from './jobs/charge-expiration.js'
-import { startIdempotencyCleanupWorker } from './jobs/idempotency-cleanup.js'
-import { startPixAutomaticoConsentWorker } from './jobs/pix-automatico-consent.js'
-import { startApiKeyRevocationWorker } from './jobs/api-key-revocation.js'
+import { startBoss, stopBoss, getBoss } from './jobs/queue-setup.js'
+import { registerBillingCycleWorker } from './jobs/billing-cycle.js'
+import { registerDunningRetryWorker } from './jobs/dunning-retry.js'
+import { registerWebhookDeliveryWorker } from './jobs/webhook-delivery.js'
+import { registerChargeExpirationWorker } from './jobs/charge-expiration.js'
+import { registerIdempotencyCleanupWorker } from './jobs/idempotency-cleanup.js'
+import { registerPixAutomaticoConsentWorker } from './jobs/pix-automatico-consent.js'
+import { registerApiKeyRevocationWorker } from './jobs/api-key-revocation.js'
 import { customerRoutes } from './routes/v1/customers.js'
 import { chargeRoutes } from './routes/v1/charges.js'
 import { planRoutes } from './routes/v1/plans.js'
@@ -22,6 +15,7 @@ import { subscriptionRoutes } from './routes/v1/subscriptions.js'
 import { invoiceRoutes } from './routes/v1/invoices.js'
 import { webhookEndpointRoutes } from './routes/v1/webhook-endpoints.js'
 import { webhookDeliveryRoutes } from './routes/v1/webhook-deliveries.js'
+import { apiKeyRoutes } from './routes/v1/api-keys.js'
 import { metricsRoutes } from './routes/v1/metrics.js'
 import { testRoutes } from './routes/v1/test.js'
 import { efiCallbackRoutes } from './routes/webhooks/efi-callback.js'
@@ -73,6 +67,7 @@ async function start(): Promise<void> {
   await app.register(invoiceRoutes)
   await app.register(webhookEndpointRoutes)
   await app.register(webhookDeliveryRoutes)
+  await app.register(apiKeyRoutes)
   await app.register(metricsRoutes)
   await app.register(testRoutes, { provider })
   await app.register(efiCallbackRoutes)
@@ -83,47 +78,28 @@ async function start(): Promise<void> {
   await app.listen({ port, host })
   app.log.info(`Server listening on ${host}:${port}`)
 
-  // Start background workers (requires REDIS_URL)
-  const workers: Worker[] = []
-  if (process.env['REDIS_URL']) {
-    workers.push(
-      startBillingCycleWorker({ provider, pixKey }),
-      startDunningRetryWorker({ provider, pixKey }),
-      startWebhookDeliveryWorker(),
-      startChargeExpirationWorker(),
-      startIdempotencyCleanupWorker(),
-      startPixAutomaticoConsentWorker({ provider }),
-      startApiKeyRevocationWorker(),
-    )
+  // Start pg-boss and register background workers
+  await startBoss()
+  const boss = getBoss()
 
-    // Schedule periodic jobs
-    await getBillingCycleQueue().add('billing-cycle', {}, {
-      repeat: { every: 60_000 }, // every minute
-    })
-    await getChargeExpirationQueue().add('charge-expiration', {}, {
-      repeat: { every: 60_000 }, // every minute
-    })
-    await getIdempotencyCleanupQueue().add('idempotency-cleanup', {}, {
-      repeat: { every: 3_600_000 }, // every hour
-    })
-    await getApiKeyRevocationQueue().add('api-key-revocation', {}, {
-      repeat: { every: 3_600_000 }, // every hour
-    })
+  await registerBillingCycleWorker(boss, { provider, pixKey })
+  await registerDunningRetryWorker(boss, { provider, pixKey })
+  await registerWebhookDeliveryWorker(boss)
+  await registerChargeExpirationWorker(boss)
+  await registerIdempotencyCleanupWorker(boss)
+  await registerPixAutomaticoConsentWorker(boss, { provider })
+  await registerApiKeyRevocationWorker(boss)
 
-    app.log.info(`Started ${workers.length} background workers`)
-  } else {
-    app.log.warn('REDIS_URL not set — background workers disabled')
-  }
+  app.log.info('Background workers registered (pg-boss)')
 
   // Graceful shutdown
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`Received ${signal}, shutting down gracefully...`)
 
     try {
-      await Promise.all(workers.map((w) => w.close()))
+      await stopBoss()
       await app.close()
       await closeDatabase()
-      await closeQueues()
       app.log.info('Shutdown complete')
       process.exit(0)
     } catch (err: unknown) {

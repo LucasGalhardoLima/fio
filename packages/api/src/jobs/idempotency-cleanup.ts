@@ -1,15 +1,16 @@
-import { Worker } from 'bullmq'
+import PgBoss from 'pg-boss'
 import { sql } from 'kysely'
 import { QUEUE_NAMES } from './queue-setup.js'
 import { getDatabase } from '../db/connection.js'
 
-export function startIdempotencyCleanupWorker(): Worker {
-  const redisUrl = process.env['REDIS_URL']
-  if (!redisUrl) {
-    throw new Error('REDIS_URL environment variable is required')
-  }
-
-  const worker = new Worker(
+/**
+ * Register the idempotency cleanup worker with pg-boss.
+ *
+ * Schedules a cron job that runs every hour to delete
+ * expired idempotency keys from the database.
+ */
+export async function registerIdempotencyCleanupWorker(boss: PgBoss): Promise<void> {
+  await boss.work(
     QUEUE_NAMES.IDEMPOTENCY_CLEANUP,
     async () => {
       const db = getDatabase()
@@ -26,8 +27,7 @@ export function startIdempotencyCleanupWorker(): Worker {
 
       return { deleted }
     },
-    { connection: { url: redisUrl, maxRetriesPerRequest: null } },
   )
 
-  return worker
+  await boss.schedule(QUEUE_NAMES.IDEMPOTENCY_CLEANUP, '0 * * * *')
 }

@@ -1,13 +1,11 @@
 import type { FastifyInstance } from 'fastify'
 import { sql } from 'kysely'
-import { Redis as IORedis } from 'ioredis'
 import { getDatabase } from '../db/connection.js'
 
 interface HealthCheck {
   status: 'ok' | 'degraded'
   checks: {
     database: 'ok' | 'error'
-    redis: 'ok' | 'error'
   }
 }
 
@@ -20,7 +18,6 @@ export async function healthRoutes(fastify: FastifyInstance): Promise<void> {
         status: 'ok',
         checks: {
           database: 'ok',
-          redis: 'ok',
         },
       }
 
@@ -30,19 +27,6 @@ export async function healthRoutes(fastify: FastifyInstance): Promise<void> {
         await sql`SELECT 1`.execute(db)
       } catch {
         result.checks.database = 'error'
-        result.status = 'degraded'
-      }
-
-      // Check Redis
-      try {
-        const redisUrl = process.env['REDIS_URL']
-        if (redisUrl) {
-          const redis = new IORedis(redisUrl)
-          await redis.ping()
-          await redis.quit()
-        }
-      } catch {
-        result.checks.redis = 'error'
         result.status = 'degraded'
       }
 

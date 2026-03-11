@@ -1,21 +1,12 @@
 import type { FastifyInstance } from 'fastify'
 import fp from 'fastify-plugin'
 import rateLimit from '@fastify/rate-limit'
-import { Redis } from 'ioredis'
 import { RateLimitError } from '../lib/errors.js'
 
 async function rateLimitPlugin(fastify: FastifyInstance): Promise<void> {
-  const redisUrl = process.env['REDIS_URL']
-  if (!redisUrl) {
-    throw new Error('REDIS_URL environment variable is required for rate limiting')
-  }
-
-  const redis = new Redis(redisUrl)
-
   await fastify.register(rateLimit, {
     max: 100,
     timeWindow: '1 minute',
-    redis,
     nameSpace: 'fio-rate-limit:',
     keyGenerator: (request) => {
       const accountId: string | undefined = request.accountId

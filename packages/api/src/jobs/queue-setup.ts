@@ -1,19 +1,6 @@
-import { Queue } from 'bullmq'
+import PgBoss from 'pg-boss'
 
-function getRedisUrl(): string {
-  const url = process.env['REDIS_URL']
-  if (!url) {
-    throw new Error('REDIS_URL environment variable is required for job queues')
-  }
-  return url
-}
-
-function getConnectionOptions(): { url: string; maxRetriesPerRequest: null } {
-  return {
-    url: getRedisUrl(),
-    maxRetriesPerRequest: null,
-  }
-}
+let boss: PgBoss | null = null
 
 export const QUEUE_NAMES = {
   BILLING_CYCLE: 'billing-cycle',
@@ -27,37 +14,37 @@ export const QUEUE_NAMES = {
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES]
 
-function createQueue(name: QueueName): Queue {
-  return new Queue(name, {
-    connection: getConnectionOptions(),
-    defaultJobOptions: {
-      removeOnComplete: { count: 1000 },
-      removeOnFail: { count: 5000 },
-    },
-  })
-}
-
-const queues = new Map<QueueName, Queue>()
-
-function getQueue(name: QueueName): Queue {
-  let queue = queues.get(name)
-  if (!queue) {
-    queue = createQueue(name)
-    queues.set(name, queue)
+function getDatabaseUrl(): string {
+  const url = process.env['DATABASE_URL']
+  if (!url) {
+    throw new Error('DATABASE_URL environment variable is required for job queues')
   }
-  return queue
+  return url
 }
 
-export function getBillingCycleQueue(): Queue { return getQueue(QUEUE_NAMES.BILLING_CYCLE) }
-export function getDunningRetryQueue(): Queue { return getQueue(QUEUE_NAMES.DUNNING_RETRY) }
-export function getWebhookDeliveryQueue(): Queue { return getQueue(QUEUE_NAMES.WEBHOOK_DELIVERY) }
-export function getPixAutomaticoConsentQueue(): Queue { return getQueue(QUEUE_NAMES.PIX_AUTOMATICO_CONSENT) }
-export function getChargeExpirationQueue(): Queue { return getQueue(QUEUE_NAMES.CHARGE_EXPIRATION) }
-export function getIdempotencyCleanupQueue(): Queue { return getQueue(QUEUE_NAMES.IDEMPOTENCY_CLEANUP) }
-export function getApiKeyRevocationQueue(): Queue { return getQueue(QUEUE_NAMES.API_KEY_REVOCATION) }
+export function getBoss(): PgBoss {
+  if (!boss) {
+    boss = new PgBoss({
+      connectionString: getDatabaseUrl(),
+      ssl: { rejectUnauthorized: false },
+    })
+  }
+  return boss
+}
 
-export async function closeQueues(): Promise<void> {
-  const closePromises = Array.from(queues.values()).map((q) => q.close())
-  await Promise.all(closePromises)
-  queues.clear()
+export async function startBoss(): Promise<void> {
+  const instance = getBoss()
+  await instance.start()
+
+  // Create all queues (idempotent — no-ops if already exist)
+  for (const name of Object.values(QUEUE_NAMES)) {
+    await instance.createQueue(name)
+  }
+}
+
+export async function stopBoss(): Promise<void> {
+  if (boss) {
+    await boss.stop()
+    boss = null
+  }
 }

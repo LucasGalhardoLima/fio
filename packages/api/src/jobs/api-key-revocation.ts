@@ -1,14 +1,15 @@
-import { Worker } from 'bullmq'
-import { getDatabase } from '../db/connection.js'
+import PgBoss from 'pg-boss'
 import { QUEUE_NAMES } from './queue-setup.js'
+import { getDatabase } from '../db/connection.js'
 
-export function startApiKeyRevocationWorker(): Worker {
-  const redisUrl = process.env['REDIS_URL']
-  if (!redisUrl) {
-    throw new Error('REDIS_URL environment variable is required')
-  }
-
-  const worker = new Worker(
+/**
+ * Register the API key revocation worker with pg-boss.
+ *
+ * Schedules a cron job that runs every hour to auto-revoke
+ * API keys that have passed their expiration date.
+ */
+export async function registerApiKeyRevocationWorker(boss: PgBoss): Promise<void> {
+  await boss.work(
     QUEUE_NAMES.API_KEY_REVOCATION,
     async () => {
       const db = getDatabase()
@@ -28,8 +29,7 @@ export function startApiKeyRevocationWorker(): Worker {
 
       return { revoked }
     },
-    { connection: { url: redisUrl, maxRetriesPerRequest: null } },
   )
 
-  return worker
+  await boss.schedule(QUEUE_NAMES.API_KEY_REVOCATION, '0 * * * *')
 }

@@ -10,7 +10,7 @@ import {
   findMatchingEndpoints,
 } from '../db/queries/webhook-endpoints.js'
 import { insertWebhookDelivery } from '../db/queries/webhook-deliveries.js'
-import { getWebhookDeliveryQueue } from '../jobs/queue-setup.js'
+import { getBoss, QUEUE_NAMES } from '../jobs/queue-setup.js'
 import { NotFoundError } from '../lib/errors.js'
 import { paginateResults, normalizePaginationLimit } from '../lib/pagination.js'
 import { MAX_WEBHOOK_ATTEMPTS } from '@fio-pay/shared'
@@ -125,24 +125,18 @@ export async function dispatchEvent(
       response_time_ms: null,
     })
 
-    await getWebhookDeliveryQueue().add(
-      'webhook-delivery',
-      {
-        delivery_id: delivery.id,
-        endpoint_id: endpoint.id,
-        endpoint_url: endpoint.url,
-        endpoint_secret: endpoint.secret,
-        event_id: event.id,
-        event_type: event.event_type,
-        event_data: event.data,
-        account_id: event.account_id,
-        environment: event.environment,
-        attempt: 1,
-        max_attempts: MAX_WEBHOOK_ATTEMPTS,
-      },
-      {
-        attempts: 1, // BullMQ level: no auto-retry; we manage retries ourselves
-      },
-    )
+    await getBoss().send(QUEUE_NAMES.WEBHOOK_DELIVERY, {
+      delivery_id: delivery.id,
+      endpoint_id: endpoint.id,
+      endpoint_url: endpoint.url,
+      endpoint_secret: endpoint.secret,
+      event_id: event.id,
+      event_type: event.event_type,
+      event_data: event.data,
+      account_id: event.account_id,
+      environment: event.environment,
+      attempt: 1,
+      max_attempts: MAX_WEBHOOK_ATTEMPTS,
+    })
   }
 }
