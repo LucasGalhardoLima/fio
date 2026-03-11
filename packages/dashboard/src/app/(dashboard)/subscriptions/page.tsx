@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { DataTable } from '@/components/data-table'
 import { apiFetch } from '@/lib/api'
+import { useSession } from '@/components/session-provider'
 
 interface Subscription {
   id: string
@@ -27,16 +28,17 @@ const statusColors: Record<string, string> = {
 }
 
 export default function SubscriptionsPage() {
+  const { token } = useSession()
   const [subs, setSubs] = useState<Subscription[]>([])
   const [error, setError] = useState('')
 
   useEffect(() => {
-    apiFetch<ListResponse>('/v1/subscriptions', { token: '' })
+    apiFetch<ListResponse>('/v1/subscriptions', { token })
       .then((res) => setSubs(res.data))
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Erro ao carregar')
       })
-  }, [])
+  }, [token])
 
   if (error) {
     return <div className="rounded-md bg-red-50 p-4 text-sm text-red-600">{error}</div>

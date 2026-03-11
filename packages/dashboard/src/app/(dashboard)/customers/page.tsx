@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { DataTable } from '@/components/data-table'
 import { apiFetch } from '@/lib/api'
+import { useSession } from '@/components/session-provider'
 
 interface Customer {
   id: string
@@ -18,16 +19,17 @@ interface ListResponse {
 }
 
 export default function CustomersPage() {
+  const { token } = useSession()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [error, setError] = useState('')
 
   useEffect(() => {
-    apiFetch<ListResponse>('/v1/customers', { token: '' })
+    apiFetch<ListResponse>('/v1/customers', { token })
       .then((res) => setCustomers(res.data))
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Erro ao carregar')
       })
-  }, [])
+  }, [token])
 
   if (error) {
     return <div className="rounded-md bg-red-50 p-4 text-sm text-red-600">{error}</div>

@@ -23,10 +23,21 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      await apiFetch<LoginResponse>('/auth/login', {
+      const result = await apiFetch<LoginResponse>('/auth/login', {
         method: 'POST',
         body: { email, password },
       })
+
+      const sessionRes = await fetch('/api/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: result.session_token }),
+      })
+
+      if (!sessionRes.ok) {
+        throw new Error('Erro ao salvar sessão')
+      }
+
       router.push('/overview')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao entrar')

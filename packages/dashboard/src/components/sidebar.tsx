@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useSession } from '@/components/session-provider'
 
 const nav = [
   { label: 'Visão Geral', href: '/overview' },
@@ -14,6 +15,7 @@ const nav = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { logout } = useSession()
 
   return (
     <aside className="flex w-56 flex-col border-r border-gray-200 bg-white">
@@ -38,6 +40,14 @@ export function Sidebar() {
           )
         })}
       </nav>
+      <div className="border-t border-gray-200 p-2">
+        <button
+          onClick={logout}
+          className="block w-full rounded-md px-3 py-2 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Sair
+        </button>
+      </div>
     </aside>
   )
 }

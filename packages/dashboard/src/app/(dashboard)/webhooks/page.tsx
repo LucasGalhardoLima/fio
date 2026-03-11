@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { DataTable } from '@/components/data-table'
 import { apiFetch } from '@/lib/api'
+import { useSession } from '@/components/session-provider'
 
 interface WebhookDelivery {
   id: string
@@ -27,16 +28,17 @@ const statusColors: Record<string, string> = {
 }
 
 export default function WebhooksPage() {
+  const { token } = useSession()
   const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([])
   const [error, setError] = useState('')
 
   useEffect(() => {
-    apiFetch<ListResponse>('/v1/webhook-deliveries', { token: '' })
+    apiFetch<ListResponse>('/v1/webhook-deliveries', { token })
       .then((res) => setDeliveries(res.data))
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Erro ao carregar')
       })
-  }, [])
+  }, [token])
 
   if (error) {
     return <div className="rounded-md bg-red-50 p-4 text-sm text-red-600">{error}</div>

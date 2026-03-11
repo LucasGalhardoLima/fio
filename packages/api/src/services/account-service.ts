@@ -5,6 +5,8 @@ import type { Database, AccountRow, ApiKeyRow } from '../db/types.js'
 import { ConflictError, AuthError, NotFoundError } from '../lib/errors.js'
 
 const KEY_PREFIX_LENGTH = 12
+const SESSION_TOKEN_PREFIX_LENGTH = 12
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 
 function generateApiKey(environment: 'test' | 'live'): string {
   const prefix = environment === 'test' ? 'fio_test_' : 'fio_live_'
@@ -98,8 +100,22 @@ export async function loginAccount(
     throw new AuthError('Invalid email or password')
   }
 
-  // Generate a session token (simple approach for dashboard)
+  // Generate a session token and persist hash + prefix for lookup
   const sessionToken = randomBytes(32).toString('base64url')
+  const sessionTokenHash = await argon2.hash(sessionToken)
+  const sessionTokenPrefix = sessionToken.slice(0, SESSION_TOKEN_PREFIX_LENGTH)
+  const sessionExpiresAt = new Date(Date.now() + SESSION_TTL_MS)
+
+  await db
+    .updateTable('accounts')
+    .set({
+      session_token_hash: sessionTokenHash,
+      session_token_prefix: sessionTokenPrefix,
+      session_expires_at: sessionExpiresAt,
+      updated_at: new Date(),
+    })
+    .where('id', '=', account.id)
+    .execute()
 
   const { password_hash: _, ...safeAccount } = account
 

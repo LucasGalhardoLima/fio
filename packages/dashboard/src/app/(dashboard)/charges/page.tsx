@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { DataTable } from '@/components/data-table'
 import { apiFetch } from '@/lib/api'
+import { useSession } from '@/components/session-provider'
 
 interface Charge {
   id: string
@@ -34,16 +35,17 @@ const statusColors: Record<string, string> = {
 }
 
 export default function ChargesPage() {
+  const { token } = useSession()
   const [charges, setCharges] = useState<Charge[]>([])
   const [error, setError] = useState('')
 
   useEffect(() => {
-    apiFetch<ListResponse>('/v1/charges', { token: '' })
+    apiFetch<ListResponse>('/v1/charges', { token })
       .then((res) => setCharges(res.data))
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Erro ao carregar')
       })
-  }, [])
+  }, [token])
 
   if (error) {
     return <div className="rounded-md bg-red-50 p-4 text-sm text-red-600">{error}</div>

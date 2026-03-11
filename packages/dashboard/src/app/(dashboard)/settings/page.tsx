@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { apiFetch } from '@/lib/api'
+import { useSession } from '@/components/session-provider'
 
 interface ApiKey {
   id: string
@@ -13,17 +14,19 @@ interface ApiKey {
 }
 
 export default function SettingsPage() {
+  const { token } = useSession()
   const [keys, setKeys] = useState<ApiKey[]>([])
   const [error, setError] = useState('')
   const [newKey, setNewKey] = useState<string | null>(null)
 
   useEffect(() => {
     loadKeys()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token])
 
   async function loadKeys() {
     try {
-      const res = await apiFetch<{ data: ApiKey[] }>('/v1/api-keys', { token: '' })
+      const res = await apiFetch<{ data: ApiKey[] }>('/v1/api-keys', { token })
       setKeys(res.data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar chaves')
@@ -35,7 +38,7 @@ export default function SettingsPage() {
       const res = await apiFetch<{ raw_key: string }>('/v1/api-keys', {
         method: 'POST',
         body: { environment: env },
-        token: '',
+        token,
       })
       setNewKey(res.raw_key)
       await loadKeys()
@@ -46,7 +49,7 @@ export default function SettingsPage() {
 
   async function handleRevoke(id: string) {
     try {
-      await apiFetch(`/v1/api-keys/${id}/revoke`, { method: 'POST', token: '' })
+      await apiFetch(`/v1/api-keys/${id}/revoke`, { method: 'POST', token })
       await loadKeys()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao revogar chave')

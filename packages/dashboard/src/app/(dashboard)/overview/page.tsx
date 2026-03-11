@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { StatCard } from '@/components/stat-card'
 import { apiFetch } from '@/lib/api'
+import { useSession } from '@/components/session-provider'
 
 interface Metrics {
   mrr: number
@@ -19,16 +20,17 @@ function formatBRL(centavos: number): string {
 }
 
 export default function OverviewPage() {
+  const { token } = useSession()
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    apiFetch<Metrics>('/v1/metrics', { token: '' })
+    apiFetch<Metrics>('/v1/metrics', { token })
       .then(setMetrics)
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Erro ao carregar métricas')
       })
-  }, [])
+  }, [token])
 
   if (error) {
     return (

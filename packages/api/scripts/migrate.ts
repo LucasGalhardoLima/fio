@@ -1,6 +1,7 @@
 import { Kysely, PostgresDialect, sql } from 'kysely'
 import pg from 'pg'
-import { up } from '../src/db/migrations/001-initial-schema.js'
+import { up as up001 } from '../src/db/migrations/001-initial-schema.js'
+import { up as up002 } from '../src/db/migrations/002-add-sessions.js'
 
 async function main(): Promise<void> {
   const connectionString = process.env['DATABASE_URL']
@@ -19,21 +20,36 @@ async function main(): Promise<void> {
   })
 
   try {
-    // Check if schema already exists
-    const result = await sql<{ exists: boolean }>`
+    // Check if base schema exists
+    const tableResult = await sql<{ exists: boolean }>`
       SELECT EXISTS (
         SELECT FROM information_schema.tables
         WHERE table_name = 'accounts'
       )
     `.execute(db)
 
-    if (result.rows[0]?.exists) {
-      console.log('Schema already exists — skipping migration')
-      return
+    if (!tableResult.rows[0]?.exists) {
+      await up001(db)
+      console.log('Migration 001 complete')
+    } else {
+      console.log('Migration 001 already applied — skipping')
     }
 
-    await up(db)
-    console.log('Migration complete')
+    // Check if session columns exist
+    const columnResult = await sql<{ exists: boolean }>`
+      SELECT EXISTS (
+        SELECT FROM information_schema.columns
+        WHERE table_name = 'accounts'
+          AND column_name = 'session_token_hash'
+      )
+    `.execute(db)
+
+    if (!columnResult.rows[0]?.exists) {
+      await up002(db)
+      console.log('Migration 002 complete')
+    } else {
+      console.log('Migration 002 already applied — skipping')
+    }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e)
     console.error('Migration error:', msg)

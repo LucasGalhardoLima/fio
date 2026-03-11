@@ -1,0 +1,15 @@
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+cmds = ["corepack enable && corepack prepare pnpm@9.15.4 --activate"]
+
+[phases.install]
+cmds = ["pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = [
+  "pnpm --filter @fio-pay/shared run build",
+  "pnpm --filter @fio-pay/api run build",
+]
+
+[start]
+cmd = "pnpm --filter @fio-pay/api run migrate && pnpm --filter @fio-pay/api run start"

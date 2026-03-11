@@ -20,6 +20,9 @@ export interface AccountsTable {
   name: string
   email: string
   password_hash: string
+  session_token_hash: string | null
+  session_token_prefix: string | null
+  session_expires_at: Date | null
   created_at: Generated<Date>
   updated_at: Generated<Date>
 }
