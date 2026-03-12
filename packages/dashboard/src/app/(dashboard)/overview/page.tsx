@@ -34,13 +34,13 @@ export default function OverviewPage() {
 
   if (error) {
     return (
-      <div className="rounded-md bg-red-50 p-4 text-sm text-red-600">{error}</div>
+      <div className="rounded-md bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">{error}</div>
     )
   }
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold">Visão Geral</h1>
+      <h1 className="mb-6 text-xl font-semibold text-text-primary">Visão Geral</h1>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="MRR"

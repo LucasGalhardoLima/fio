@@ -32,12 +32,12 @@ export default function CustomersPage() {
   }, [token])
 
   if (error) {
-    return <div className="rounded-md bg-red-50 p-4 text-sm text-red-600">{error}</div>
+    return <div className="rounded-md bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">{error}</div>
   }
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold">Clientes</h1>
+      <h1 className="mb-6 text-xl font-semibold text-text-primary">Clientes</h1>
       <DataTable
         columns={[
           { key: 'name', label: 'Nome' },
