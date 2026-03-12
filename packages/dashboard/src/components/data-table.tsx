@@ -1,7 +1,7 @@
 'use client'
 
 interface Column<T> {
-  key: string
+  key: string & keyof T
   label: string
   render?: (row: T) => React.ReactNode
 }
@@ -12,7 +12,7 @@ interface DataTableProps<T> {
   emptyMessage?: string
 }
 
-export function DataTable<T extends Record<string, unknown>>({
+export function DataTable<T extends object>({
   columns,
   data,
   emptyMessage = 'Nenhum dado encontrado',
@@ -45,7 +45,7 @@ export function DataTable<T extends Record<string, unknown>>({
             <tr key={i} className="hover:bg-surface-hover">
               {columns.map((col) => (
                 <td key={col.key} className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
-                  {col.render ? col.render(row) : String(row[col.key] ?? '')}
+                  {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '')}
                 </td>
               ))}
             </tr>
