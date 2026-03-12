@@ -40,27 +40,27 @@ export default function RegisterPage() {
   if (keys) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Conta criada!</h2>
-        <p className="text-sm text-gray-600">
+        <h2 className="text-lg font-semibold text-text-primary">Conta criada!</h2>
+        <p className="text-sm text-text-secondary">
           Guarde suas chaves de API. Elas não serão exibidas novamente.
         </p>
         <div className="space-y-2">
           <div>
-            <label className="text-xs font-medium text-gray-500">Chave de teste</label>
-            <code className="mt-1 block break-all rounded-md bg-gray-100 p-2 text-xs">
+            <label className="text-xs font-medium text-text-tertiary">Chave de teste</label>
+            <code className="mt-1 block break-all rounded-md bg-surface-hover p-2 text-xs text-text-primary">
               {keys.test}
             </code>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-500">Chave de produção</label>
-            <code className="mt-1 block break-all rounded-md bg-gray-100 p-2 text-xs">
+            <label className="text-xs font-medium text-text-tertiary">Chave de produção</label>
+            <code className="mt-1 block break-all rounded-md bg-surface-hover p-2 text-xs text-text-primary">
               {keys.live}
             </code>
           </div>
         </div>
         <button
           onClick={() => router.push('/login')}
-          className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-bg hover:bg-accent-hover"
         >
           Ir para login
         </button>
@@ -70,51 +70,51 @@ export default function RegisterPage() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">Criar conta</h2>
+      <h2 className="text-lg font-semibold text-text-primary">Criar conta</h2>
       {error && (
-        <p className="rounded-md bg-red-50 p-2 text-sm text-red-600">{error}</p>
+        <p className="rounded-md bg-red-500/10 border border-red-500/20 p-2 text-sm text-red-400">{error}</p>
       )}
       <div>
-        <label className="block text-sm font-medium text-gray-700">Nome</label>
+        <label className="block text-sm font-medium text-text-secondary">Nome</label>
         <input
           type="text"
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Email</label>
+        <label className="block text-sm font-medium text-text-secondary">Email</label>
         <input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Senha</label>
+        <label className="block text-sm font-medium text-text-secondary">Senha</label>
         <input
           type="password"
           required
           minLength={8}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="mt-1 block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
         />
       </div>
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+        className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-bg hover:bg-accent-hover disabled:opacity-50"
       >
         {loading ? 'Criando...' : 'Criar conta'}
       </button>
-      <p className="text-center text-sm text-gray-500">
+      <p className="text-center text-sm text-text-secondary">
         Já tem conta?{' '}
-        <Link href="/login" className="text-indigo-600 hover:underline">
+        <Link href="/login" className="text-accent hover:underline">
           Entrar
         </Link>
       </p>
