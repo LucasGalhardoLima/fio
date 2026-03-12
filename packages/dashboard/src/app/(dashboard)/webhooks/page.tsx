@@ -22,9 +22,9 @@ interface ListResponse {
 }
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-700',
-  delivered: 'bg-green-100 text-green-700',
-  failed: 'bg-red-100 text-red-700',
+  pending: 'bg-yellow-500/15 text-yellow-400',
+  delivered: 'bg-green-500/15 text-green-400',
+  failed: 'bg-red-500/15 text-red-400',
 }
 
 export default function WebhooksPage() {
@@ -41,12 +41,12 @@ export default function WebhooksPage() {
   }, [token])
 
   if (error) {
-    return <div className="rounded-md bg-red-50 p-4 text-sm text-red-600">{error}</div>
+    return <div className="rounded-md bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">{error}</div>
   }
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold">Webhook Deliveries</h1>
+      <h1 className="mb-6 text-xl font-semibold text-text-primary">Webhook Deliveries</h1>
       <DataTable
         columns={[
           { key: 'id', label: 'ID', render: (row) => row.id.slice(0, 8) },
