@@ -19,32 +19,32 @@ export function DataTable<T extends Record<string, unknown>>({
 }: DataTableProps<T>) {
   if (data.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
+      <div className="rounded-lg border border-border bg-surface p-8 text-center text-sm text-text-secondary">
         {emptyMessage}
       </div>
     )
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+    <div className="overflow-hidden rounded-lg border border-border bg-surface">
+      <table className="min-w-full divide-y divide-border">
+        <thead className="bg-surface-hover">
           <tr>
             {columns.map((col) => (
               <th
                 key={col.key}
-                className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-tertiary"
               >
                 {col.label}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200">
+        <tbody className="divide-y divide-border">
           {data.map((row, i) => (
-            <tr key={i} className="hover:bg-gray-50">
+            <tr key={i} className="hover:bg-surface-hover">
               {columns.map((col) => (
-                <td key={col.key} className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
+                <td key={col.key} className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
                   {col.render ? col.render(row) : String(row[col.key] ?? '')}
                 </td>
               ))}
