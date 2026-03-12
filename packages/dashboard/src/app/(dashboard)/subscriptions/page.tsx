@@ -20,11 +20,11 @@ interface ListResponse {
 }
 
 const statusColors: Record<string, string> = {
-  active: 'bg-green-100 text-green-700',
-  trialing: 'bg-blue-100 text-blue-700',
-  past_due: 'bg-yellow-100 text-yellow-700',
-  canceled: 'bg-red-100 text-red-700',
-  paused: 'bg-gray-100 text-gray-700',
+  active: 'bg-green-500/15 text-green-400',
+  trialing: 'bg-blue-500/15 text-blue-400',
+  past_due: 'bg-yellow-500/15 text-yellow-400',
+  canceled: 'bg-red-500/15 text-red-400',
+  paused: 'bg-white/10 text-text-secondary',
 }
 
 export default function SubscriptionsPage() {
@@ -41,12 +41,12 @@ export default function SubscriptionsPage() {
   }, [token])
 
   if (error) {
-    return <div className="rounded-md bg-red-50 p-4 text-sm text-red-600">{error}</div>
+    return <div className="rounded-md bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">{error}</div>
   }
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold">Assinaturas</h1>
+      <h1 className="mb-6 text-xl font-semibold text-text-primary">Assinaturas</h1>
       <DataTable
         columns={[
           { key: 'id', label: 'ID', render: (row) => row.id.slice(0, 8) },
