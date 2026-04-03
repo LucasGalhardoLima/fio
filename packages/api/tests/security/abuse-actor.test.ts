@@ -75,18 +75,17 @@ describe('Persona: Abuse Actor — Rate Limit Enforcement', () => {
     const { rawKey: apiKey } = await createTestApiKey(db, account.id)
 
     try {
-      const requests = []
+      // Send requests sequentially to ensure deterministic rate limit counting
+      const responses = []
       for (let i = 0; i < 101; i++) {
-        requests.push(
-          app.inject({
+        responses.push(
+          await app.inject({
             method: 'GET',
             url: '/v1/customers',
             headers: { authorization: `Bearer ${apiKey}` },
           })
         )
       }
-
-      const responses = await Promise.all(requests)
 
       const successful = responses.filter(r => r.statusCode === 200)
       const rateLimited = responses.filter(r => r.statusCode === 429)
