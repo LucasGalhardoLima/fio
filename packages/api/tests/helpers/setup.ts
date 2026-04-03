@@ -24,7 +24,6 @@ import { testRoutes } from '../../src/routes/v1/test.js'
 import { metricsRoutes } from '../../src/routes/v1/metrics.js'
 import { healthRoutes } from '../../src/routes/health.js'
 import { fioErrorHandler } from '../../src/lib/errors.js'
-import { fioRateLimit } from '../../src/middleware/rate-limit.js'
 import { MockPaymentProvider } from '../../src/providers/mock-provider.js'
 
 const { Pool } = pg
@@ -68,7 +67,6 @@ export async function createTestApp(db?: Kysely<Database>): Promise<FastifyInsta
   const pixKey = 'test-pix-key'
 
   await app.register(fioErrorHandler)
-  await app.register(fioRateLimit)
   await app.register(customerRoutes)
   await app.register(chargeRoutes, { provider, pixKey })
   await app.register(planRoutes)

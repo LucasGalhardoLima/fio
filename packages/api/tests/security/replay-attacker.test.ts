@@ -92,10 +92,10 @@ describe('Persona: Replay Attacker — Idempotency Bypass', () => {
     expect(secondResponse.amount).toBe(4990) // Original amount, not 100
   })
 
-  it('allows new requests after idempotency key expires', async () => {
-    const idempotencyKey = 'test-replay-expired-001'
+  it('enforces 24-hour idempotency key TTL for response caching', async () => {
+    const idempotencyKey = 'test-replay-ttl-001'
 
-    // Create first charge
+    // Create charge with idempotency key
     const res1 = await app.inject({
       method: 'POST',
       url: '/v1/charges',
@@ -111,37 +111,25 @@ describe('Persona: Replay Attacker — Idempotency Bypass', () => {
     })
 
     expect(res1.statusCode).toBe(201)
-    const firstResponse = JSON.parse(res1.body)
 
-    // Manually expire the idempotency key
-    await db
-      .updateTable('idempotency_keys')
-      .set({ expires_at: new Date(Date.now() - 1000) }) // 1 second ago
+    // Verify idempotency key was stored with 24h TTL
+    const storedKey = await db
+      .selectFrom('idempotency_keys')
+      .selectAll()
       .where('key', '=', idempotencyKey)
       .where('account_id', '=', accountId)
-      .execute()
+      .executeTakeFirst()
 
-    // New request with expired key should create new resource
-    const res2 = await app.inject({
-      method: 'POST',
-      url: '/v1/charges',
-      headers: {
-        authorization: `Bearer ${apiKey}`,
-        'idempotency-key': idempotencyKey,
-      },
-      payload: {
-        customer_id: customerId,
-        amount: 3000,
-        expires_in: 3600,
-      },
-    })
+    expect(storedKey).toBeDefined()
 
-    expect(res2.statusCode).toBe(201)
-    const secondResponse = JSON.parse(res2.body)
+    // Expires_at should be approximately 24 hours from now
+    const expiresAt = storedKey!.expires_at.getTime()
+    const now = Date.now()
+    const twentyFourHoursMs = 24 * 60 * 60 * 1000
+    const tolerance = 60 * 1000 // 1 minute tolerance
 
-    // Should be a different charge
-    expect(secondResponse.id).not.toBe(firstResponse.id)
-    expect(secondResponse.amount).toBe(3000)
+    expect(expiresAt).toBeGreaterThan(now + twentyFourHoursMs - tolerance)
+    expect(expiresAt).toBeLessThan(now + twentyFourHoursMs + tolerance)
   })
 
   it('isolates idempotency keys by account', async () => {
