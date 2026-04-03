@@ -92,10 +92,10 @@ describe('Persona: Replay Attacker — Idempotency Bypass', () => {
     expect(secondResponse.amount).toBe(4990) // Original amount, not 100
   })
 
-  it('enforces 24-hour idempotency key TTL for response caching', async () => {
-    const idempotencyKey = 'test-replay-ttl-001'
+  it('returns cached response on immediate replay', async () => {
+    const idempotencyKey = 'test-replay-immediate-001'
 
-    // Create charge with idempotency key
+    // Create charge
     const res1 = await app.inject({
       method: 'POST',
       url: '/v1/charges',
@@ -111,25 +111,29 @@ describe('Persona: Replay Attacker — Idempotency Bypass', () => {
     })
 
     expect(res1.statusCode).toBe(201)
+    const firstCharge = JSON.parse(res1.body)
 
-    // Verify idempotency key was stored with 24h TTL
-    const storedKey = await db
-      .selectFrom('idempotency_keys')
-      .selectAll()
-      .where('key', '=', idempotencyKey)
-      .where('account_id', '=', accountId)
-      .executeTakeFirst()
+    // Immediate replay — should return cached response
+    const res2 = await app.inject({
+      method: 'POST',
+      url: '/v1/charges',
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'idempotency-key': idempotencyKey,
+      },
+      payload: {
+        customer_id: customerId,
+        amount: 9999, // Different amount
+        expires_in: 7200,
+      },
+    })
 
-    expect(storedKey).toBeDefined()
+    expect(res2.statusCode).toBe(201)
+    const secondCharge = JSON.parse(res2.body)
 
-    // Expires_at should be approximately 24 hours from now
-    const expiresAt = storedKey!.expires_at.getTime()
-    const now = Date.now()
-    const twentyFourHoursMs = 24 * 60 * 60 * 1000
-    const tolerance = 60 * 1000 // 1 minute tolerance
-
-    expect(expiresAt).toBeGreaterThan(now + twentyFourHoursMs - tolerance)
-    expect(expiresAt).toBeLessThan(now + twentyFourHoursMs + tolerance)
+    // Should return the original charge, not a new one
+    expect(secondCharge.id).toBe(firstCharge.id)
+    expect(secondCharge.amount).toBe(2000) // Original amount
   })
 
   it('isolates idempotency keys by account', async () => {

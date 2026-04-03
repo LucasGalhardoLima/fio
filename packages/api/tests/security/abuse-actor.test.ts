@@ -32,37 +32,38 @@ let testSeq = 0
  */
 async function createRateLimitedApp(db: Kysely<Database>): Promise<FastifyInstance> {
   testSeq += 1
-  const app = await createTestApp(db)
+  const ns = `test-rate-limit-${testSeq}-${Date.now()}`
 
-  // Register rate limit with unique namespace to avoid cross-test contamination
-  await app.register(rateLimit, {
-    max: 100,
-    timeWindow: '1 minute',
-    nameSpace: `test-rate-limit-${testSeq}-${Date.now()}:`,
-    keyGenerator: (request) => {
-      const accountId: string | undefined = (request as unknown as Record<string, unknown>).accountId as string | undefined
-      if (accountId !== undefined) {
-        return accountId
-      }
-      return request.ip
-    },
-    addHeadersOnExceeding: {
-      'x-ratelimit-limit': true,
-      'x-ratelimit-remaining': true,
-      'x-ratelimit-reset': true,
-    },
-    addHeaders: {
-      'x-ratelimit-limit': true,
-      'x-ratelimit-remaining': true,
-      'x-ratelimit-reset': true,
-      'retry-after': true,
-    },
-    errorResponseBuilder: () => {
-      throw new RateLimitError()
+  return createTestApp(db, {
+    beforeReady: async (app) => {
+      await app.register(rateLimit, {
+        max: 100,
+        timeWindow: '1 minute',
+        nameSpace: `${ns}:`,
+        keyGenerator: (request) => {
+          const accountId: string | undefined = (request as unknown as Record<string, unknown>).accountId as string | undefined
+          if (accountId !== undefined) {
+            return accountId
+          }
+          return request.ip
+        },
+        addHeadersOnExceeding: {
+          'x-ratelimit-limit': true,
+          'x-ratelimit-remaining': true,
+          'x-ratelimit-reset': true,
+        },
+        addHeaders: {
+          'x-ratelimit-limit': true,
+          'x-ratelimit-remaining': true,
+          'x-ratelimit-reset': true,
+          'retry-after': true,
+        },
+        errorResponseBuilder: () => {
+          throw new RateLimitError()
+        },
+      })
     },
   })
-
-  return app
 }
 
 describe('Persona: Abuse Actor — Rate Limit Enforcement', () => {

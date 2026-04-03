@@ -57,7 +57,10 @@ export function createTestDatabase(): Kysely<Database> {
 // App helper
 // ---------------------------------------------------------------------------
 
-export async function createTestApp(db?: Kysely<Database>): Promise<FastifyInstance> {
+export async function createTestApp(
+  db?: Kysely<Database>,
+  opts?: { beforeReady?: (app: FastifyInstance) => Promise<void> },
+): Promise<FastifyInstance> {
   if (db) {
     setDatabase(db)
   }
@@ -76,6 +79,10 @@ export async function createTestApp(db?: Kysely<Database>): Promise<FastifyInsta
   await app.register(testRoutes)
   await app.register(metricsRoutes)
   await app.register(healthRoutes)
+
+  if (opts?.beforeReady) {
+    await opts.beforeReady(app)
+  }
 
   await app.ready()
   return app
