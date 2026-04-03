@@ -51,22 +51,20 @@ describe('Persona: Internal Misuse — Environment Isolation', () => {
   })
 
   it('test mode keys cannot access live data', async () => {
-    // Create test and live accounts
-    const testAccount = await createTestAccount(db, { environment: 'test' })
-    const { rawKey: testKey } = await createTestApiKey(db, testAccount.id)
+    // Create a single account with both test and live API keys
+    const account = await createTestAccount(db)
+    const { rawKey: testKey } = await createTestApiKey(db, account.id, { environment: 'test' })
+    const { rawKey: liveKey } = await createTestApiKey(db, account.id, { environment: 'live' })
 
-    const liveAccount = await createTestAccount(db, { environment: 'live' })
-    const { rawKey: liveKey } = await createTestApiKey(db, liveAccount.id)
-
-    // Create a customer in live mode
+    // Create a customer via the live API key
     const liveRes = await app.inject({
       method: 'POST',
       url: '/v1/customers',
       headers: { authorization: `Bearer ${liveKey}` },
       payload: {
         name: 'Live Customer',
-        email: 'live@example.com',
-        tax_id: '11111111111',
+        email: 'live-env-test@example.com',
+        tax_id: '52998224725',
         tax_id_type: 'cpf',
       },
     })
@@ -81,26 +79,24 @@ describe('Persona: Internal Misuse — Environment Isolation', () => {
       headers: { authorization: `Bearer ${testKey}` },
     })
 
-    // Should not be able to access (404 or 403)
-    expect([403, 404]).toContain(testRes.statusCode)
+    // Should not be able to access (404 — environment isolation)
+    expect(testRes.statusCode).toBe(404)
   })
 
   it('live mode keys cannot access test data', async () => {
-    const testAccount = await createTestAccount(db, { environment: 'test' })
-    const { rawKey: testKey } = await createTestApiKey(db, testAccount.id)
+    const account = await createTestAccount(db)
+    const { rawKey: testKey } = await createTestApiKey(db, account.id, { environment: 'test' })
+    const { rawKey: liveKey } = await createTestApiKey(db, account.id, { environment: 'live' })
 
-    const liveAccount = await createTestAccount(db, { environment: 'live' })
-    const { rawKey: liveKey } = await createTestApiKey(db, liveAccount.id)
-
-    // Create a customer in test mode
+    // Create a customer via the test API key
     const testRes = await app.inject({
       method: 'POST',
       url: '/v1/customers',
       headers: { authorization: `Bearer ${testKey}` },
       payload: {
         name: 'Test Customer',
-        email: 'test@example.com',
-        tax_id: '22222222222',
+        email: 'test-env-test@example.com',
+        tax_id: '52998224725',
         tax_id_type: 'cpf',
       },
     })
@@ -116,17 +112,21 @@ describe('Persona: Internal Misuse — Environment Isolation', () => {
     })
 
     // Should not be able to access
-    expect([403, 404]).toContain(liveRes.statusCode)
+    expect(liveRes.statusCode).toBe(404)
   })
 
   it('environment is correctly inferred from API key prefix', async () => {
-    const testAccount = await createTestAccount(db)
-    const { rawKey: testKey } = await createTestApiKey(db, testAccount.id)
+    const account = await createTestAccount(db)
+    const { rawKey: testKey } = await createTestApiKey(db, account.id, { environment: 'test' })
+    const { rawKey: liveKey } = await createTestApiKey(db, account.id, { environment: 'live' })
 
     // Test key should start with fio_test_
     expect(testKey.startsWith('fio_test_')).toBe(true)
 
-    // Make request and verify environment is set correctly
+    // Live key should start with fio_live_
+    expect(liveKey.startsWith('fio_live_')).toBe(true)
+
+    // Make request with test key — should succeed
     const res = await app.inject({
       method: 'GET',
       url: '/v1/customers',
@@ -134,7 +134,6 @@ describe('Persona: Internal Misuse — Environment Isolation', () => {
     })
 
     expect(res.statusCode).toBe(200)
-    // Environment should be available in request context (verified in middleware)
   })
 })
 
@@ -172,7 +171,7 @@ describe('Persona: Internal Misuse — ID Guessing/Enumeration', () => {
   it('returns 404 for non-existent resource IDs', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/customers/cus_nonexistent123',
+      url: '/v1/customers/00000000-0000-0000-0000-000000000000',
       headers: { authorization: `Bearer ${apiKey}` },
     })
 
@@ -190,15 +189,15 @@ describe('Persona: Internal Misuse — ID Guessing/Enumeration', () => {
       headers: { authorization: `Bearer ${apiKey2}` },
       payload: {
         name: 'Other Account Customer',
-        email: 'other@example.com',
-        tax_id: '33333333333',
+        email: 'other-leak-test@example.com',
+        tax_id: '52998224725',
         tax_id_type: 'cpf',
       },
     })
 
     const otherCustomer = JSON.parse(res2.body)
 
-    // Attempt to access with first account's key
+    // Attempt to access with first account's key — should get 404 not 403
     const res1 = await app.inject({
       method: 'GET',
       url: `/v1/customers/${otherCustomer.id}`,
@@ -211,7 +210,7 @@ describe('Persona: Internal Misuse — ID Guessing/Enumeration', () => {
     // Attempt to access truly non-existent ID
     const resFake = await app.inject({
       method: 'GET',
-      url: '/v1/customers/cus_fake123',
+      url: '/v1/customers/00000000-0000-0000-0000-000000000000',
       headers: { authorization: `Bearer ${apiKey}` },
     })
 
@@ -221,7 +220,7 @@ describe('Persona: Internal Misuse — ID Guessing/Enumeration', () => {
     // Error messages should not leak information
     const body1 = JSON.parse(res1.body)
     const bodyFake = JSON.parse(resFake.body)
-    expect(body1.error).toBe(bodyFake.error)
+    expect(body1.type).toBe(bodyFake.type)
   })
 })
 
@@ -229,6 +228,8 @@ describe('Persona: Internal Misuse — Immutable Field Protection', () => {
   let app: FastifyInstance
   let db: Kysely<Database>
   let apiKey: string
+  let accountId: string
+  let customerId: string
 
   beforeAll(async () => {
     db = createTestDatabase()
@@ -236,8 +237,12 @@ describe('Persona: Internal Misuse — Immutable Field Protection', () => {
     await cleanupDatabase(db)
 
     const account = await createTestAccount(db)
+    accountId = account.id
     const { rawKey } = await createTestApiKey(db, account.id)
     apiKey = rawKey
+
+    const customer = await createTestCustomer(db, account.id, 'test')
+    customerId = customer.id
   })
 
   afterAll(async () => {
@@ -246,29 +251,15 @@ describe('Persona: Internal Misuse — Immutable Field Protection', () => {
   })
 
   it('prevents modification of charge amount after creation', async () => {
-    // Create customer
-    const customerRes = await app.inject({
-      method: 'POST',
-      url: '/v1/customers',
-      headers: { authorization: `Bearer ${apiKey}` },
-      payload: {
-        name: 'Test Customer',
-        email: 'test@example.com',
-        tax_id: '44444444444',
-        tax_id_type: 'cpf',
-      },
-    })
-
-    const customer = JSON.parse(customerRes.body)
-
     // Create charge
     const chargeRes = await app.inject({
       method: 'POST',
       url: '/v1/charges',
       headers: { authorization: `Bearer ${apiKey}` },
       payload: {
-        customer_id: customer.id,
+        customer_id: customerId,
         amount: 4990, // R$ 49.90
+        expires_in: 3600,
       },
     })
 
@@ -276,7 +267,7 @@ describe('Persona: Internal Misuse — Immutable Field Protection', () => {
     const charge = JSON.parse(chargeRes.body)
     expect(charge.amount).toBe(4990)
 
-    // Attempt to modify charge amount
+    // Attempt to modify charge amount — no PUT endpoint exists (by design)
     const updateRes = await app.inject({
       method: 'PUT',
       url: `/v1/charges/${charge.id}`,
@@ -286,10 +277,10 @@ describe('Persona: Internal Misuse — Immutable Field Protection', () => {
       },
     })
 
-    // Should reject modification (400 or 422)
-    expect([400, 422]).toContain(updateRes.statusCode)
+    // No update route exists — 404 confirms immutability
+    expect(updateRes.statusCode).toBe(404)
 
-    // Verify amount unchanged
+    // Verify amount unchanged via GET
     const getRes = await app.inject({
       method: 'GET',
       url: `/v1/charges/${charge.id}`,
@@ -297,38 +288,12 @@ describe('Persona: Internal Misuse — Immutable Field Protection', () => {
     })
 
     const updatedCharge = JSON.parse(getRes.body)
-    expect(updatedCharge.amount).toBe(4990) // Original amount
+    expect(updatedCharge.amount).toBe(4990) // Original amount preserved
   })
 
   it('prevents modification of customer_id on subscription', async () => {
-    // Create two customers
-    const customer1Res = await app.inject({
-      method: 'POST',
-      url: '/v1/customers',
-      headers: { authorization: `Bearer ${apiKey}` },
-      payload: {
-        name: 'Customer 1',
-        email: 'customer1@example.com',
-        tax_id: '55555555555',
-        tax_id_type: 'cpf',
-      },
-    })
-
-    const customer1 = JSON.parse(customer1Res.body)
-
-    const customer2Res = await app.inject({
-      method: 'POST',
-      url: '/v1/customers',
-      headers: { authorization: `Bearer ${apiKey}` },
-      payload: {
-        name: 'Customer 2',
-        email: 'customer2@example.com',
-        tax_id: '66666666666',
-        tax_id_type: 'cpf',
-      },
-    })
-
-    const customer2 = JSON.parse(customer2Res.body)
+    // Create second customer in same account
+    const customer2 = await createTestCustomer(db, accountId, 'test')
 
     // Create plan
     const planRes = await app.inject({
@@ -336,43 +301,44 @@ describe('Persona: Internal Misuse — Immutable Field Protection', () => {
       url: '/v1/plans',
       headers: { authorization: `Bearer ${apiKey}` },
       payload: {
-        name: 'Test Plan',
+        name: 'Immutability Test Plan',
         amount: 2990,
         interval: 'month',
       },
     })
 
+    expect(planRes.statusCode).toBe(201)
     const plan = JSON.parse(planRes.body)
 
-    // Create subscription for customer 1
+    // Create subscription for first customer
     const subRes = await app.inject({
       method: 'POST',
       url: '/v1/subscriptions',
       headers: { authorization: `Bearer ${apiKey}` },
       payload: {
-        customer_id: customer1.id,
+        customer_id: customerId,
         plan_id: plan.id,
       },
     })
 
     expect(subRes.statusCode).toBe(201)
     const subscription = JSON.parse(subRes.body)
-    expect(subscription.customer_id).toBe(customer1.id)
+    expect(subscription.customer_id).toBe(customerId)
 
-    // Attempt to change subscription to customer 2
+    // Attempt to change subscription customer — no PUT endpoint exists (by design)
     const updateRes = await app.inject({
       method: 'PUT',
       url: `/v1/subscriptions/${subscription.id}`,
       headers: { authorization: `Bearer ${apiKey}` },
       payload: {
-        customer_id: customer2.id, // Try to steal subscription
+        customer_id: customer2.id,
       },
     })
 
-    // Should reject modification
-    expect([400, 422]).toContain(updateRes.statusCode)
+    // No update route exists — 404 confirms immutability
+    expect(updateRes.statusCode).toBe(404)
 
-    // Verify customer_id unchanged
+    // Verify customer_id unchanged via GET
     const getRes = await app.inject({
       method: 'GET',
       url: `/v1/subscriptions/${subscription.id}`,
@@ -380,7 +346,7 @@ describe('Persona: Internal Misuse — Immutable Field Protection', () => {
     })
 
     const updatedSub = JSON.parse(getRes.body)
-    expect(updatedSub.customer_id).toBe(customer1.id) // Original customer
+    expect(updatedSub.customer_id).toBe(customerId) // Original customer preserved
   })
 })
 
@@ -404,27 +370,27 @@ describe('Persona: Internal Misuse — SQL Injection', () => {
     await db.destroy()
   })
 
-  it('prevents SQL injection via email field', async () => {
-    const maliciousEmail = "'; DROP TABLE customers; --"
+  it('prevents SQL injection via customer name field', async () => {
+    const maliciousName = "Robert'); DROP TABLE customers; --"
 
     const res = await app.inject({
       method: 'POST',
       url: '/v1/customers',
       headers: { authorization: `Bearer ${apiKey}` },
       payload: {
-        name: 'Test',
-        email: maliciousEmail,
-        tax_id: '77777777777',
+        name: maliciousName,
+        email: 'sqli-test@example.com',
+        tax_id: '52998224725',
         tax_id_type: 'cpf',
       },
     })
 
-    // Should fail validation (422) or create customer with escaped email
+    // Should either succeed (name stored safely) or fail validation
     if (res.statusCode === 201) {
       const customer = JSON.parse(res.body)
-      expect(customer.email).toBe(maliciousEmail) // Stored as-is, not executed
+      expect(customer.name).toBe(maliciousName) // Stored as-is, not executed
     } else {
-      expect(res.statusCode).toBe(422) // Invalid email format
+      expect(res.statusCode).toBe(422) // Validation error
     }
 
     // Verify customers table still exists (not dropped)
@@ -445,14 +411,13 @@ describe('Persona: Internal Misuse — SQL Injection', () => {
     expect(res.statusCode).toBe(200)
     const data = JSON.parse(res.body)
 
-    // Should not return all customers (which would happen if injection worked)
-    // Instead, should return empty list (no customer with that email)
+    // Should not return all customers (injection would do that)
     expect(data.data).toEqual([])
   })
 
   it('uses parameterized queries throughout', () => {
     // All queries use Kysely, which automatically parameterizes queries
-    // This is verified by code inspection - no raw SQL string concatenation
+    // This is verified by code inspection — no raw SQL string concatenation
     expect(true).toBe(true)
   })
 })

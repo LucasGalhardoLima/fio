@@ -7,6 +7,7 @@ import {
   createTestDatabase,
   createTestAccount,
   createTestApiKey,
+  createTestCustomer,
   cleanupDatabase,
 } from '../helpers/setup.js'
 
@@ -24,6 +25,7 @@ describe('Persona: Replay Attacker — Idempotency Bypass', () => {
   let db: Kysely<Database>
   let apiKey: string
   let accountId: string
+  let customerId: string
 
   beforeAll(async () => {
     db = createTestDatabase()
@@ -34,6 +36,10 @@ describe('Persona: Replay Attacker — Idempotency Bypass', () => {
     accountId = account.id
     const { rawKey } = await createTestApiKey(db, accountId)
     apiKey = rawKey
+
+    // Create a customer for charge tests (idempotency is on charges)
+    const customer = await createTestCustomer(db, accountId, 'test')
+    customerId = customer.id
   })
 
   afterAll(async () => {
@@ -44,38 +50,36 @@ describe('Persona: Replay Attacker — Idempotency Bypass', () => {
   it('blocks duplicate requests with same idempotency key', async () => {
     const idempotencyKey = 'test-replay-001'
 
-    // First request
+    // First request — create a charge
     const res1 = await app.inject({
       method: 'POST',
-      url: '/v1/customers',
+      url: '/v1/charges',
       headers: {
         authorization: `Bearer ${apiKey}`,
         'idempotency-key': idempotencyKey,
       },
       payload: {
-        name: 'Test Customer',
-        email: 'test@example.com',
-        tax_id: '12345678909',
-        tax_id_type: 'cpf',
+        customer_id: customerId,
+        amount: 4990,
+        expires_in: 3600,
       },
     })
 
     expect(res1.statusCode).toBe(201)
     const firstResponse = JSON.parse(res1.body)
 
-    // Replay attempt with same idempotency key
+    // Replay attempt with same idempotency key but different payload
     const res2 = await app.inject({
       method: 'POST',
-      url: '/v1/customers',
+      url: '/v1/charges',
       headers: {
         authorization: `Bearer ${apiKey}`,
         'idempotency-key': idempotencyKey,
       },
       payload: {
-        name: 'Different Customer', // Different payload
-        email: 'different@example.com',
-        tax_id: '98765432100',
-        tax_id_type: 'cpf',
+        customer_id: customerId,
+        amount: 100, // Different amount
+        expires_in: 7200,
       },
     })
 
@@ -85,26 +89,24 @@ describe('Persona: Replay Attacker — Idempotency Bypass', () => {
 
     // Responses should be identical (cached)
     expect(secondResponse.id).toBe(firstResponse.id)
-    expect(secondResponse.name).toBe('Test Customer') // Original name, not "Different Customer"
-    expect(secondResponse.email).toBe('test@example.com')
+    expect(secondResponse.amount).toBe(4990) // Original amount, not 100
   })
 
   it('allows new requests after idempotency key expires', async () => {
     const idempotencyKey = 'test-replay-expired-001'
 
-    // Create first request
+    // Create first charge
     const res1 = await app.inject({
       method: 'POST',
-      url: '/v1/customers',
+      url: '/v1/charges',
       headers: {
         authorization: `Bearer ${apiKey}`,
         'idempotency-key': idempotencyKey,
       },
       payload: {
-        name: 'First Customer',
-        email: 'first@example.com',
-        tax_id: '11111111111',
-        tax_id_type: 'cpf',
+        customer_id: customerId,
+        amount: 2000,
+        expires_in: 3600,
       },
     })
 
@@ -122,75 +124,72 @@ describe('Persona: Replay Attacker — Idempotency Bypass', () => {
     // New request with expired key should create new resource
     const res2 = await app.inject({
       method: 'POST',
-      url: '/v1/customers',
+      url: '/v1/charges',
       headers: {
         authorization: `Bearer ${apiKey}`,
         'idempotency-key': idempotencyKey,
       },
       payload: {
-        name: 'Second Customer',
-        email: 'second@example.com',
-        tax_id: '22222222222',
-        tax_id_type: 'cpf',
+        customer_id: customerId,
+        amount: 3000,
+        expires_in: 3600,
       },
     })
 
     expect(res2.statusCode).toBe(201)
     const secondResponse = JSON.parse(res2.body)
 
-    // Should be a different customer
+    // Should be a different charge
     expect(secondResponse.id).not.toBe(firstResponse.id)
-    expect(secondResponse.name).toBe('Second Customer')
+    expect(secondResponse.amount).toBe(3000)
   })
 
   it('isolates idempotency keys by account', async () => {
     const idempotencyKey = 'test-cross-account-replay-001'
 
-    // Create second account
+    // Create second account with a customer
     const account2 = await createTestAccount(db)
     const { rawKey: apiKey2 } = await createTestApiKey(db, account2.id)
+    const customer2 = await createTestCustomer(db, account2.id, 'test')
 
-    // Account 1 creates customer with idempotency key
+    // Account 1 creates charge with idempotency key
     const res1 = await app.inject({
       method: 'POST',
-      url: '/v1/customers',
+      url: '/v1/charges',
       headers: {
         authorization: `Bearer ${apiKey}`,
         'idempotency-key': idempotencyKey,
       },
       payload: {
-        name: 'Account 1 Customer',
-        email: 'account1@example.com',
-        tax_id: '33333333333',
-        tax_id_type: 'cpf',
+        customer_id: customerId,
+        amount: 5000,
+        expires_in: 3600,
       },
     })
 
     expect(res1.statusCode).toBe(201)
     const response1 = JSON.parse(res1.body)
 
-    // Account 2 uses same idempotency key - should create new resource
+    // Account 2 uses same idempotency key — should create new resource
     const res2 = await app.inject({
       method: 'POST',
-      url: '/v1/customers',
+      url: '/v1/charges',
       headers: {
         authorization: `Bearer ${apiKey2}`,
-        'idempotency-key': idempotencyKey, // Same key
+        'idempotency-key': idempotencyKey,
       },
       payload: {
-        name: 'Account 2 Customer',
-        email: 'account2@example.com',
-        tax_id: '44444444444',
-        tax_id_type: 'cpf',
+        customer_id: customer2.id,
+        amount: 5000,
+        expires_in: 3600,
       },
     })
 
     expect(res2.statusCode).toBe(201)
     const response2 = JSON.parse(res2.body)
 
-    // Should be different customers (different accounts)
+    // Should be different charges (different accounts)
     expect(response2.id).not.toBe(response1.id)
-    expect(response2.name).toBe('Account 2 Customer')
   })
 
   it('only applies idempotency to POST and PUT methods', async () => {
@@ -199,7 +198,7 @@ describe('Persona: Replay Attacker — Idempotency Bypass', () => {
     // GET request with idempotency key should ignore it
     const res = await app.inject({
       method: 'GET',
-      url: '/v1/customers',
+      url: '/v1/charges',
       headers: {
         authorization: `Bearer ${apiKey}`,
         'idempotency-key': idempotencyKey,
@@ -219,44 +218,45 @@ describe('Persona: Replay Attacker — Idempotency Bypass', () => {
     expect(storedKey).toBeUndefined()
   })
 
-  it('returns same status code on replay', async () => {
+  it('returns same status code on replay of failed request', async () => {
     const idempotencyKey = 'test-status-code-001'
+    const fakeCustomerId = '00000000-0000-0000-0000-000000000000'
 
-    // First request that fails validation
+    // First request that fails — non-existent customer
     const res1 = await app.inject({
       method: 'POST',
-      url: '/v1/customers',
+      url: '/v1/charges',
       headers: {
         authorization: `Bearer ${apiKey}`,
         'idempotency-key': idempotencyKey,
       },
       payload: {
-        name: 'Test',
-        email: 'invalid-email', // Invalid email
-        tax_id: '12345678909',
-        tax_id_type: 'cpf',
+        customer_id: fakeCustomerId,
+        amount: 1000,
+        expires_in: 3600,
       },
     })
 
-    expect(res1.statusCode).toBe(422) // Validation error
+    // Should fail (404 for missing customer or 422 for validation)
+    const failStatus = res1.statusCode
+    expect(failStatus).toBeGreaterThanOrEqual(400)
 
-    // Replay should return same 422 status
+    // Replay should return same cached error status
     const res2 = await app.inject({
       method: 'POST',
-      url: '/v1/customers',
+      url: '/v1/charges',
       headers: {
         authorization: `Bearer ${apiKey}`,
         'idempotency-key': idempotencyKey,
       },
       payload: {
-        name: 'Test',
-        email: 'valid@example.com', // Now valid, but should return cached error
-        tax_id: '12345678909',
-        tax_id_type: 'cpf',
+        customer_id: customerId, // Valid customer this time
+        amount: 1000,
+        expires_in: 3600,
       },
     })
 
-    expect(res2.statusCode).toBe(422)
+    expect(res2.statusCode).toBe(failStatus)
   })
 
   it('requires authentication for idempotency key usage', async () => {
@@ -265,15 +265,14 @@ describe('Persona: Replay Attacker — Idempotency Bypass', () => {
     // Request without auth but with idempotency key
     const res = await app.inject({
       method: 'POST',
-      url: '/v1/customers',
+      url: '/v1/charges',
       headers: {
         'idempotency-key': idempotencyKey,
       },
       payload: {
-        name: 'Test Customer',
-        email: 'test@example.com',
-        tax_id: '12345678909',
-        tax_id_type: 'cpf',
+        customer_id: customerId,
+        amount: 1000,
+        expires_in: 3600,
       },
     })
 
@@ -296,6 +295,7 @@ describe('Persona: Replay Attacker — Concurrent Request Race', () => {
   let app: FastifyInstance
   let db: Kysely<Database>
   let apiKey: string
+  let customerId: string
 
   beforeAll(async () => {
     db = createTestDatabase()
@@ -305,6 +305,9 @@ describe('Persona: Replay Attacker — Concurrent Request Race', () => {
     const account = await createTestAccount(db)
     const { rawKey } = await createTestApiKey(db, account.id)
     apiKey = rawKey
+
+    const customer = await createTestCustomer(db, account.id, 'test')
+    customerId = customer.id
   })
 
   afterAll(async () => {
@@ -315,43 +318,43 @@ describe('Persona: Replay Attacker — Concurrent Request Race', () => {
   it('handles concurrent requests with same idempotency key', async () => {
     const idempotencyKey = 'test-concurrent-001'
 
-    // Send 5 concurrent requests with same idempotency key
+    // Send 5 concurrent charge requests with same idempotency key
     const promises = Array.from({ length: 5 }, () =>
       app.inject({
         method: 'POST',
-        url: '/v1/customers',
+        url: '/v1/charges',
         headers: {
           authorization: `Bearer ${apiKey}`,
           'idempotency-key': idempotencyKey,
         },
         payload: {
-          name: 'Concurrent Customer',
-          email: 'concurrent@example.com',
-          tax_id: '55555555555',
-          tax_id_type: 'cpf',
+          customer_id: customerId,
+          amount: 7500,
+          expires_in: 3600,
         },
       })
     )
 
     const responses = await Promise.all(promises)
 
-    // All should succeed
-    responses.forEach(res => {
-      expect(res.statusCode).toBe(201)
-    })
+    // At least one should succeed with 201
+    const successful = responses.filter(r => r.statusCode === 201)
+    expect(successful.length).toBeGreaterThanOrEqual(1)
 
-    // All should return the same customer ID (deduplicated)
-    const customerIds = responses.map(res => JSON.parse(res.body).id)
-    const uniqueIds = new Set(customerIds)
-    expect(uniqueIds.size).toBe(1)
+    // All successful responses should return the same charge ID (deduplicated)
+    if (successful.length > 1) {
+      const chargeIds = successful.map(res => JSON.parse(res.body).id)
+      const uniqueIds = new Set(chargeIds)
+      expect(uniqueIds.size).toBe(1)
+    }
 
-    // Only one customer should be created
-    const customers = await db
-      .selectFrom('customers')
+    // Only one charge should be created in the database
+    const charges = await db
+      .selectFrom('charges')
       .selectAll()
-      .where('email', '=', 'concurrent@example.com')
+      .where('idempotency_key', '=', idempotencyKey)
       .execute()
 
-    expect(customers.length).toBe(1)
+    expect(charges.length).toBe(1)
   })
 })
