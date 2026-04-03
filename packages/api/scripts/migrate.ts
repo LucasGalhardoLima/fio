@@ -14,7 +14,7 @@ async function main(): Promise<void> {
     dialect: new PostgresDialect({
       pool: new pg.Pool({
         connectionString,
-        ssl: { rejectUnauthorized: false },
+        ssl: process.env['NODE_ENV'] === 'production' ? { rejectUnauthorized: false } : false,
       }),
     }),
   })
