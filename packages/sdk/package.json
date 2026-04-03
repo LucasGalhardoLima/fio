@@ -1,0 +1,43 @@
+{
+  "name": "@fio-pay/sdk",
+  "version": "0.1.2",
+  "description": "TypeScript SDK for the Fio subscription billing API (PIX payments)",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucasgalhardo/fio.git",
+    "directory": "packages/sdk"
+  },
+  "keywords": [
+    "fio",
+    "pix",
+    "billing",
+    "subscription",
+    "sdk",
+    "payments",
+    "brazil"
+  ],
+  "dependencies": {
+    "@fio-pay/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.3"
+  }
+}

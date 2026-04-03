@@ -1,0 +1,23 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[[services]]
+name = "api"
+startCommand = "pnpm --filter @fio-pay/api start"
+
+[services.envs]
+NODE_ENV = "production"
+PORT = "3000"
+
+[[services]]
+name = "worker"
+startCommand = "pnpm --filter @fio-pay/api start:worker"
+
+[services.envs]
+NODE_ENV = "production"

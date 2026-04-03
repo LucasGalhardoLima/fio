@@ -1,0 +1,108 @@
+---
+title: Primeira cobrança PIX em 5 minutos
+description: Guia rápido para criar sua primeira cobrança PIX com o Fio
+---
+
+## 1. Instale o SDK
+
+```bash
+npm install @fio-pay/sdk
+```
+
+## 2. Configure o cliente
+
+```typescript
+import { Fio } from '@fio-pay/sdk'
+
+const fio = new Fio({
+  apiKey: 'fio_test_sua_chave_aqui',
+})
+```
+
+## 3. Crie um cliente
+
+```typescript
+const customer = await fio.customers.create({
+  name: 'João Silva',
+  email: 'joao@example.com',
+  tax_id: '12345678909',
+  tax_id_type: 'cpf',
+})
+
+console.log(customer.id) // cus_abc123
+```
+
+## 4. Gere uma cobrança PIX
+
+```typescript
+const charge = await fio.charges.create({
+  customer_id: customer.id,
+  amount: 4990, // R$ 49,90 em centavos
+  expires_in: 3600, // 1 hora
+})
+
+console.log(charge.pix_qr_code) // String copia-e-cola
+console.log(charge.pix_qr_code_image) // Imagem QR code (base64 data URI)
+console.log(charge.status) // "pending"
+```
+
+## 5. (Sandbox) Simule o pagamento
+
+```typescript
+await fio.test.simulatePayment(charge.id)
+
+const updated = await fio.charges.get(charge.id)
+console.log(updated.status) // "paid"
+```
+
+## Pronto!
+
+Sua primeira cobrança PIX foi criada e paga no sandbox.
+
+## Próximos passos
+
+### Receba webhooks quando o cliente pagar
+
+```typescript
+const endpoint = await fio.webhookEndpoints.create({
+  url: 'https://seuapp.com/webhooks/fio',
+  event_types: ['charge.paid', 'subscription.canceled'],
+})
+
+// Guarde o endpoint.secret para verificar assinaturas
+```
+
+### Verifique a assinatura no seu servidor
+
+```typescript
+import { Fio } from '@fio-pay/sdk'
+
+const event = Fio.webhooks.verify(
+  rawBody,
+  request.headers['fio-signature'],
+  'whsec_seu_secret_aqui',
+)
+
+if (event.type === 'charge.paid') {
+  // Libere acesso ao produto
+}
+```
+
+### Crie uma assinatura recorrente
+
+```typescript
+const plan = await fio.plans.create({
+  name: 'Pro Mensal',
+  amount: 4990,
+  interval: 'month',
+  trial_days: 14,
+})
+
+const subscription = await fio.subscriptions.create({
+  customer_id: customer.id,
+  plan_id: plan.id,
+})
+
+console.log(subscription.status) // "trialing"
+// Após 14 dias: status muda para "active" e a primeira cobrança é gerada
+```

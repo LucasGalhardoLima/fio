@@ -1,0 +1,262 @@
+---
+import '../styles/landing.css'
+---
+<html lang="pt-BR" class="dark scroll-smooth">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fio — Cobrança recorrente via PIX pra devs</title>
+  <meta name="description" content="Integre assinaturas PIX no seu SaaS em minutos. SDK TypeScript, webhooks, sandbox completo." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Fio — Cobrança recorrente via PIX pra devs" />
+  <meta property="og:description" content="Integre assinaturas PIX no seu SaaS em minutos. SDK TypeScript, webhooks, sandbox completo." />
+  <meta property="og:image" content="https://fiopay-docs.vercel.app/og-image.png" />
+  <meta property="og:url" content="https://fiopay-docs.vercel.app/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Fio — Cobrança recorrente via PIX pra devs" />
+  <meta name="twitter:description" content="Integre assinaturas PIX no seu SaaS em minutos." />
+  <meta name="twitter:image" content="https://fiopay-docs.vercel.app/og-image.png" />
+  <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script is:inline src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+</head>
+<body class="antialiased selection:bg-green-500/30 selection:text-green-200">
+  <div class="min-h-screen relative bg-[#030712] text-gray-100 grid-pattern">
+
+    <!-- Flowing Thread SVG -->
+    <div class="thread-container" aria-hidden="true">
+      <svg width="100%" height="100%" viewBox="0 0 1440 6000" fill="none" preserveAspectRatio="xMidYMin slice" class="opacity-30">
+        <path d="M80 40 C80 300, 720 150, 720 600 C 720 1200, 1200 1300, 1100 1800 C 1000 2300, 300 2400, 400 3000 C 500 3600, 1200 3700, 720 4400 C 240 5100, 720 5400, 720 5900"
+              stroke="url(#thread-gradient)"
+              stroke-width="1.5"
+              stroke-linecap="round" />
+        <defs>
+          <linearGradient id="thread-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#22c55e" stop-opacity="0" />
+            <stop offset="5%" stop-color="#22c55e" stop-opacity="0.6" />
+            <stop offset="50%" stop-color="#22c55e" stop-opacity="0.4" />
+            <stop offset="95%" stop-color="#22c55e" stop-opacity="0.8" />
+            <stop offset="100%" stop-color="#22c55e" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-[#030712]/70 backdrop-blur-xl border-b border-white/5" id="main-nav">
+      <div class="max-w-[1152px] mx-auto px-6 h-20 flex items-center justify-between">
+        <div class="flex items-center gap-12">
+          <a href="/" class="text-2xl font-bold text-white tracking-tighter relative z-[60]">Fio</a>
+          <div class="nav-links" id="nav-links">
+            <a href="/docs/" class="text-sm font-medium text-gray-400 hover:text-white transition-colors">Docs</a>
+            <a href="#pricing" class="text-sm font-medium text-gray-400 hover:text-white transition-colors">Preços</a>
+            <a href="https://github.com/LucasGalhardoLima/fio" target="_blank" rel="noopener" class="text-sm font-medium text-gray-400 hover:text-white transition-colors">GitHub</a>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <a href="/docs/quickstart/" class="bg-[#22c55e] text-[#030712] px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#4ade80] transition-all hover:-translate-y-0.5 shadow-lg shadow-green-500/20">Comece agora</a>
+          <button class="hamburger md:hidden" id="menu-toggle" aria-label="Abrir menu">
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="relative z-10">
+
+      <!-- Hero Section (Centered) -->
+      <section class="max-w-[1152px] mx-auto px-6 pt-40 pb-48">
+        <div class="max-w-4xl mx-auto text-center flex flex-col items-center space-y-12">
+          <div class="space-y-8">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/10 text-xs font-semibold text-[#4ade80] tracking-wide uppercase reveal">
+              <span class="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+              Em desenvolvimento
+            </div>
+            <h1 class="text-5xl lg:text-7xl font-bold leading-[1.05] tracking-tight reveal">
+              <span class="hero-headline text-white">Cobrança recorrente via PIX</span><br/>
+              <span class="gradient-text">pra devs</span>
+            </h1>
+            <p class="text-lg text-gray-400 leading-relaxed max-w-2xl mx-auto reveal">
+              Integre assinaturas PIX no seu SaaS em minutos. SDK TypeScript nativo, webhooks em tempo real e sandbox completo para testes ilimitados.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4 reveal">
+              <a href="/docs/quickstart/" class="bg-[#22c55e] text-[#030712] px-8 py-3.5 rounded-lg font-bold hover:bg-[#4ade80] transition-all hover:scale-[1.02] shadow-xl shadow-green-500/10">Comece agora</a>
+              <a href="/docs/" class="border border-gray-700 text-gray-300 px-8 py-3.5 rounded-lg font-bold hover:border-gray-500 hover:text-white transition-all">Documentação</a>
+            </div>
+          </div>
+
+          <!-- Hero Code Block (Centered below) -->
+          <div class="w-full max-w-2xl code-glow bg-[#0a0f1a] rounded-xl border border-white/10 p-6 shadow-2xl relative overflow-hidden text-left reveal">
+            <div class="flex items-center gap-2 mb-6 border-b border-white/5 pb-4">
+              <div class="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/40"></div>
+              <div class="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/40"></div>
+              <div class="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/40"></div>
+              <span class="ml-2 text-xs text-gray-500 font-mono">subscription.ts</span>
+            </div>
+            <pre class="font-mono text-[14px] leading-7 overflow-x-auto"><span class="text-green-400">import</span> {'{'} Fio {'}'} <span class="text-green-400">from</span> <span class="text-green-200">'@fio-pay/sdk'</span>
+
+<span class="text-gray-500">// Initialize the client</span>
+<span class="text-green-400">const</span> fio = <span class="text-green-400">new</span> <span class="text-white">Fio</span>({'{'} apiKey: <span class="text-green-200">'fio_test_...'</span> {'}'})
+
+<span class="text-gray-500">// Create recurring subscription</span>
+<span class="text-green-400">const</span> sub = <span class="text-green-400">await</span> fio.subscriptions.<span class="text-white">create</span>({'{'}
+  customer_id: <span class="text-green-200">'cus_abc123'</span>,
+  plan_id: <span class="text-green-200">'plan_gold'</span>,
+{'}'})
+
+<span class="text-white">console</span>.<span class="text-white">log</span>(sub.status) <span class="text-gray-500">// "active"</span></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Section (Staggered) -->
+      <section class="max-w-[1152px] mx-auto px-6 py-48">
+        <div class="mb-32 text-center max-w-2xl mx-auto reveal">
+          <h2 class="text-3xl md:text-5xl font-bold text-white tracking-tight mb-6">Como funciona</h2>
+          <p class="text-gray-400">Três passos para cobrar seus clientes com a infraestrutura PIX mais moderna do mercado.</p>
+        </div>
+        <div class="flex flex-col gap-32">
+          <div class="max-w-md w-full md:self-start md:ml-12 group bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/[0.08] hover:-translate-y-2 transition-all duration-300 hover:border-green-500/30 reveal">
+            <div class="w-14 h-14 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400 text-2xl mb-6 group-hover:scale-110 transition-transform">
+              <iconify-icon icon="lucide:layers"></iconify-icon>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">Crie planos e assinaturas</h3>
+            <p class="text-gray-400 leading-relaxed">Defina preço, intervalo e período de trial. A Fio cuida do ciclo de faturamento e tentativas automáticas.</p>
+          </div>
+          <div class="max-w-md w-full md:self-end md:mr-12 md:-mt-24 group bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/[0.08] hover:-translate-y-2 transition-all duration-300 hover:border-green-500/30 reveal">
+            <div class="w-14 h-14 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400 text-2xl mb-6 group-hover:scale-110 transition-transform">
+              <iconify-icon icon="lucide:zap"></iconify-icon>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">Receba via PIX</h3>
+            <p class="text-gray-400 leading-relaxed">QR Codes dinâmicos gerados em milissegundos. Pagamentos confirmados instantaneamente via Webhook.</p>
+          </div>
+          <div class="max-w-md w-full self-center group bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/[0.08] hover:-translate-y-2 transition-all duration-300 hover:border-green-500/30 reveal">
+            <div class="w-14 h-14 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400 text-2xl mb-6 group-hover:scale-110 transition-transform">
+              <iconify-icon icon="lucide:code-2"></iconify-icon>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-3">Gerencie tudo por API</h3>
+            <p class="text-gray-400 leading-relaxed">Pause, cancele ou retome assinaturas. Métricas de MRR e churn disponíveis diretamente via endpoints.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Code Example Section -->
+      <section class="py-48">
+        <div class="max-w-[1152px] mx-auto px-6">
+          <div class="text-center mb-16 reveal">
+            <h2 class="text-3xl md:text-5xl font-bold text-white tracking-tight mb-6">Sua primeira cobrança em 6 linhas</h2>
+            <p class="text-gray-400">Pule a burocracia dos gateways tradicionais. Comece a testar agora mesmo no sandbox.</p>
+          </div>
+          <div class="max-w-3xl mx-auto code-glow bg-[#0a0f1a] rounded-xl border border-white/10 p-8 shadow-2xl relative overflow-hidden reveal">
+            <div class="absolute top-4 right-4 text-xs font-mono text-gray-600">TypeScript</div>
+            <pre class="font-mono text-sm leading-8 overflow-x-auto"><span class="text-green-400">const</span> customer = <span class="text-green-400">await</span> fio.customers.<span class="text-white">create</span>({'{'}
+  name: <span class="text-green-200">'Joao Silva'</span>,
+  email: <span class="text-green-200">'joao@email.com'</span>,
+  tax_id: <span class="text-green-200">'123.456.789-00'</span>
+{'}'})
+
+<span class="text-green-400">const</span> charge = <span class="text-green-400">await</span> fio.charges.<span class="text-white">create</span>({'{'}
+  customer_id: customer.id,
+  amount: <span class="text-green-200">4990</span>, <span class="text-gray-500">// R$ 49,90</span>
+{'}'})
+
+<span class="text-white">console</span>.<span class="text-white">log</span>(charge.pix_qr_code) <span class="text-gray-500">// Pronto pra pagar</span>
+
+<span class="text-gray-500">// Simule o pagamento no sandbox</span>
+<span class="text-green-400">await</span> fio.test.<span class="text-white">simulatePayment</span>(charge.id)</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pricing Section -->
+      <section id="pricing" class="max-w-[1152px] mx-auto px-6 py-48">
+        <div class="text-center mb-24 reveal">
+          <h2 class="text-3xl md:text-5xl font-bold text-white tracking-tight mb-6">Simples e transparente</h2>
+          <p class="text-gray-400">Foque no seu produto, nós cuidamos da infraestrutura de cobrança.</p>
+        </div>
+        <div class="max-w-md mx-auto reveal">
+          <div class="bg-white/5 border border-white/10 rounded-3xl p-10 text-center relative overflow-hidden hover:border-green-500/40 transition-colors">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-green-500 to-transparent opacity-50"></div>
+            <div class="text-sm font-semibold text-green-400 uppercase tracking-widest mb-6">Standard Plan</div>
+            <div class="mb-4">
+              <span class="text-6xl md:text-7xl font-bold gradient-text">1,49%</span>
+            </div>
+            <p class="text-gray-400 mb-10">por cobrança PIX liquidada</p>
+            <ul class="text-left space-y-5 mb-12">
+              <li class="flex items-center gap-3 text-gray-300">
+                <iconify-icon icon="lucide:check" class="text-green-400"></iconify-icon>
+                <span>Sandbox grátis e ilimitado</span>
+              </li>
+              <li class="flex items-center gap-3 text-gray-300">
+                <iconify-icon icon="lucide:check" class="text-green-400"></iconify-icon>
+                <span>Sem limite de transações</span>
+              </li>
+              <li class="flex items-center gap-3 text-gray-300">
+                <iconify-icon icon="lucide:check" class="text-green-400"></iconify-icon>
+                <span>Webhooks inclusos</span>
+              </li>
+              <li class="flex items-center gap-3 text-gray-300">
+                <iconify-icon icon="lucide:check" class="text-green-400"></iconify-icon>
+                <span>SDK TypeScript completo</span>
+              </li>
+              <li class="flex items-center gap-3 text-gray-300">
+                <iconify-icon icon="lucide:check" class="text-green-400"></iconify-icon>
+                <span>Suporte via Discord</span>
+              </li>
+            </ul>
+            <a href="/docs/quickstart/" class="block w-full bg-[#22c55e] text-[#030712] py-4 rounded-xl font-bold text-lg hover:bg-[#4ade80] transition-all shadow-xl shadow-green-500/10">Comece agora &mdash; grátis no sandbox</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="border-t border-white/5 pt-48">
+        <div class="max-w-[1152px] mx-auto px-6 pb-24">
+          <div class="text-center space-y-12 reveal">
+            <h2 class="text-4xl md:text-6xl font-bold text-white tracking-tighter">Sua primeira cobrança PIX em 5 minutos</h2>
+            <p class="text-gray-400 text-lg max-w-xl mx-auto">Junte-se a desenvolvedores que já estão automatizando suas cobranças.</p>
+            <div class="flex flex-col items-center gap-8">
+              <a href="/docs/quickstart/" class="bg-[#22c55e] text-[#030712] px-12 py-5 rounded-xl font-bold text-xl hover:bg-[#4ade80] transition-all hover:scale-105 shadow-2xl shadow-green-500/20">Criar conta gratuita</a>
+              <div class="flex items-center gap-12 text-sm font-medium">
+                <a href="/docs/" class="text-gray-500 hover:text-white transition-colors">Documentação</a>
+                <a href="https://github.com/LucasGalhardoLima/fio" target="_blank" rel="noopener" class="text-gray-500 hover:text-white transition-colors">GitHub</a>
+              </div>
+            </div>
+            <div class="pt-24 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-white/5">
+              <div class="text-2xl font-bold text-white tracking-tighter">Fio</div>
+              <div class="text-sm text-gray-600">&copy; 2026 Fio Payments. Todos os direitos reservados.</div>
+              <div class="flex items-center gap-6">
+                <a href="https://github.com/LucasGalhardoLima/fio" target="_blank" rel="noopener" class="text-gray-600 hover:text-white text-xl transition-colors"><iconify-icon icon="mdi:github"></iconify-icon></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+    </main>
+  </div>
+
+  <script>
+    const toggle = document.getElementById('menu-toggle');
+    const nav = document.getElementById('main-nav');
+    if (toggle && nav) {
+      toggle.addEventListener('click', () => {
+        const open = nav.getAttribute('data-menu-open') === 'true';
+        nav.setAttribute('data-menu-open', open ? 'false' : 'true');
+      });
+      document.querySelectorAll('#nav-links a').forEach(link => {
+        link.addEventListener('click', () => nav.setAttribute('data-menu-open', 'false'));
+      });
+    }
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    reveals.forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>

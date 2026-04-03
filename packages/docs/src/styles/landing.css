@@ -1,0 +1,173 @@
+/* ──────────────────────────────────────────────
+   Fio Landing Page — landing.css
+   All custom styles for /index.astro
+   ────────────────────────────────────────────── */
+
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,500,400&display=swap');
+@import "tailwindcss";
+
+/* ── Base layer — won't override Tailwind utilities ── */
+@layer base {
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; scrollbar-width: none; }
+  html::-webkit-scrollbar { display: none; }
+
+  body {
+    font-family: 'Satoshi', system-ui, -apple-system, sans-serif;
+    background-color: #030712;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+  }
+}
+
+/* ── Components layer — overridable by utilities ── */
+@layer components {
+  /* ── Gradient text ───────────────────────────── */
+  .gradient-text {
+    background: linear-gradient(135deg, #22c55e 0%, #4ade80 50%, #86efac 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 6s ease infinite;
+  }
+
+  /* ── Hero headline shimmer ───────────────────── */
+  .hero-headline {
+    background: linear-gradient(90deg, #fff 0%, #fff 40%, #22c55e 50%, #fff 60%, #fff 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 8s ease-in-out infinite;
+  }
+
+  /* ── Grid pattern background ─────────────────── */
+  .grid-pattern {
+    background-image:
+      linear-gradient(rgba(34, 197, 94, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34, 197, 94, 0.02) 1px, transparent 1px);
+    background-size: 64px 64px;
+  }
+
+  /* ── Flowing thread container ────────────────── */
+  .thread-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  /* ── Code glow border ────────────────────────── */
+  .code-glow {
+    position: relative;
+  }
+
+  .code-glow::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 0.75rem;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, transparent 50%, rgba(34, 197, 94, 0.2) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* ── Mobile nav ──────────────────────────────── */
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    z-index: 60;
+  }
+
+  .hamburger span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: #d1d5db;
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  /* ── Scroll reveal ───────────────────────────── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  .reveal.visible {
+    animation: reveal-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+/* ── Keyframes (outside layers — they're global) ── */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes shimmer {
+  0%, 100% { background-position: 100% 0; }
+  50% { background-position: -100% 0; }
+}
+
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Media queries (outside layers for proper cascade) ── */
+@media (max-width: 767px) {
+  .hamburger { display: flex; }
+
+  .nav-links {
+    position: fixed;
+    inset: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2rem;
+    background: rgba(3, 7, 18, 0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 55;
+  }
+
+  .nav-links a { font-size: 1.25rem; }
+
+  [data-menu-open="true"] .nav-links {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  [data-menu-open="true"] .hamburger span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+  }
+  [data-menu-open="true"] .hamburger span:nth-child(2) { opacity: 0; }
+  [data-menu-open="true"] .hamburger span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
+  }
+}

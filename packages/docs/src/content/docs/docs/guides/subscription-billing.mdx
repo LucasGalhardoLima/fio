@@ -1,0 +1,82 @@
+---
+title: Assinaturas e Cobrança Recorrente
+description: Guia completo para configurar assinaturas com billing cycle automático
+---
+
+Configure assinaturas com períodos de teste, cobrança automática e dunning inteligente.
+
+## Criando um plano
+
+```typescript
+const plan = await fio.plans.create({
+  name: 'Pro Mensal',
+  amount: 4990, // R$ 49,90
+  interval: 'month', // week | month | year
+  trial_days: 14,
+  dunning_schedule: [1, 3, 7], // Retentativas no dia 1, 3 e 7 após falha
+})
+```
+
+## Inscrevendo um cliente
+
+```typescript
+const subscription = await fio.subscriptions.create({
+  customer_id: 'cus_abc123',
+  plan_id: plan.id,
+})
+
+// Com trial: status = "trialing", sem cobrança
+// Sem trial: status = "active", primeira cobrança gerada imediatamente
+```
+
+## Ciclo de vida da assinatura
+
+| Estado | Descrição |
+|--------|-----------|
+| `trialing` | Período de teste. Sem cobrança. |
+| `active` | Ativa e cobrando normalmente. |
+| `past_due` | Pagamento falhou, em período de dunning. |
+| `paused` | Pausada pelo desenvolvedor. |
+| `canceled` | Cancelada. Não gera mais cobranças. |
+
+## Cancelamento
+
+```typescript
+// Cancelar imediatamente
+await fio.subscriptions.cancel(subscription.id)
+
+// Cancelar no final do período
+await fio.subscriptions.cancel(subscription.id, {
+  cancel_at_period_end: true,
+})
+```
+
+## Pausar e retomar
+
+```typescript
+// Pausar (não gera cobranças enquanto pausada)
+await fio.subscriptions.pause(subscription.id)
+
+// Retomar (recalcula o período a partir de agora)
+await fio.subscriptions.resume(subscription.id)
+```
+
+## Dunning (retentativa de pagamento)
+
+Quando um pagamento falha, o Fio automaticamente:
+
+1. Marca a assinatura como `past_due`
+2. Emite o evento `subscription.past_due`
+3. Agenda retentativas conforme o `dunning_schedule` do plano
+4. Se a retentativa funcionar: volta para `active`
+5. Se todas falharem: cancela com razão `dunning_failed`
+
+## Webhooks importantes
+
+```typescript
+// Eventos de assinatura que você deve monitorar:
+// subscription.activated - Ativada (trial acabou ou retentativa funcionou)
+// subscription.past_due - Pagamento falhou
+// subscription.canceled - Cancelada
+// subscription.trial_ending - Trial acaba em 3 dias
+```

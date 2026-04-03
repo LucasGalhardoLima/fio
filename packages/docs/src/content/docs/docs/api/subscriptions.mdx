@@ -1,0 +1,46 @@
+---
+title: Subscriptions
+description: API para assinaturas recorrentes
+sidebar:
+  order: 3
+---
+
+## POST /v1/subscriptions
+
+Cria uma assinatura.
+
+```json title="Request"
+{
+  "customer_id": "cus_abc123",
+  "plan_id": "pln_xyz789",
+  "pix_automatico": false,
+  "metadata": {}
+}
+```
+
+- Plano com `trial_days > 0`: status = `trialing`, sem cobrança
+- Plano com `trial_days = 0`: status = `active`, primeira cobrança gerada
+
+## GET /v1/subscriptions/:id
+
+Retorna assinatura com `current_period_start`, `current_period_end`, `plan`.
+
+## POST /v1/subscriptions/:id/cancel
+
+```json title="Request"
+{
+  "cancel_at_period_end": true
+}
+```
+
+## POST /v1/subscriptions/:id/pause
+
+Pausa a assinatura. Retorna 422 se não estiver `active`.
+
+## POST /v1/subscriptions/:id/resume
+
+Retoma a assinatura pausada. Recalcula `current_period_end`. Retorna 422 se não estiver `paused`.
+
+## GET /v1/subscriptions
+
+**Query params**: `starting_after`, `limit`, `status`, `customer_id`.

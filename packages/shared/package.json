@@ -1,0 +1,50 @@
+{
+  "name": "@fio-pay/shared",
+  "version": "0.1.2",
+  "description": "Shared types, Zod schemas, and constants for the Fio billing API",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./constants": {
+      "import": "./dist/constants.js",
+      "types": "./dist/constants.d.ts"
+    },
+    "./schemas": {
+      "import": "./dist/schemas/index.js",
+      "types": "./dist/schemas/index.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucasgalhardo/fio.git",
+    "directory": "packages/shared"
+  },
+  "keywords": [
+    "fio",
+    "pix",
+    "billing",
+    "types",
+    "schemas"
+  ],
+  "dependencies": {
+    "zod": "^3.24.0"
+  }
+}
