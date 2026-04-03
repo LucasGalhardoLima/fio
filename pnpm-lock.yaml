@@ -78,6 +78,9 @@ importers:
         specifier: ^3.24.0
         version: 3.25.76
     devDependencies:
+      '@fio-pay/sdk':
+        specifier: workspace:*
+        version: link:../sdk
       '@types/pg':
         specifier: ^8.11.0
         version: 8.18.0

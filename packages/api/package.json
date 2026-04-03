@@ -25,6 +25,7 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@fio-pay/sdk": "workspace:*",
     "@types/pg": "^8.11.0",
     "tsx": "^4.19.0"
   }
