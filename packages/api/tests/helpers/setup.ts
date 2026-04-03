@@ -59,7 +59,7 @@ export function createTestDatabase(): Kysely<Database> {
 
 export async function createTestApp(
   db?: Kysely<Database>,
-  opts?: { beforeReady?: (app: FastifyInstance) => Promise<void> },
+  opts?: { beforeRoutes?: (app: FastifyInstance) => Promise<void> },
 ): Promise<FastifyInstance> {
   if (db) {
     setDatabase(db)
@@ -70,6 +70,11 @@ export async function createTestApp(
   const pixKey = 'test-pix-key'
 
   await app.register(fioErrorHandler)
+
+  if (opts?.beforeRoutes) {
+    await opts.beforeRoutes(app)
+  }
+
   await app.register(customerRoutes)
   await app.register(chargeRoutes, { provider, pixKey })
   await app.register(planRoutes)
@@ -79,10 +84,6 @@ export async function createTestApp(
   await app.register(testRoutes)
   await app.register(metricsRoutes)
   await app.register(healthRoutes)
-
-  if (opts?.beforeReady) {
-    await opts.beforeReady(app)
-  }
 
   await app.ready()
   return app

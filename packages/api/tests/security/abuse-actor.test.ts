@@ -35,7 +35,7 @@ async function createRateLimitedApp(db: Kysely<Database>): Promise<FastifyInstan
   const ns = `test-rate-limit-${testSeq}-${Date.now()}`
 
   return createTestApp(db, {
-    beforeReady: async (app) => {
+    beforeRoutes: async (app) => {
       await app.register(rateLimit, {
         max: 100,
         timeWindow: '1 minute',
